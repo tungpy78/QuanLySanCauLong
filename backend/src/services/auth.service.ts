@@ -5,28 +5,7 @@ import jwt, { type SignOptions } from 'jsonwebtoken';
 
 
 export class AuthService {
-    static async register(data: any) {
-        const { email, password, phone } = data;
-
-        const existingUser = await models.User.findOne({ where: { email } });
-        if (existingUser) {
-            throw new ApiError('Email này đã được đăng ký', 409); // 409 Conflict
-        }
-
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        const newUser = await models.User.create({
-            email,
-            phone,
-            password_hash: hashedPassword,
-            role: 'customer' 
-        });
-
-        const { password_hash, ...userWithoutPassword } = newUser.toJSON();
-        return userWithoutPassword;
-    }
-
+    
     static async login(data: any, allowedRoles: string[]) {
         const { email, password } = data;
 

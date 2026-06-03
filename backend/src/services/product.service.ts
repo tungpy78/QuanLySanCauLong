@@ -20,16 +20,4 @@ export class ProductService {
         });
     }
 
-    static async getBySlug(slug: string) {
-        return await (models.Product as any).findOne({
-            where: { slug, is_active: true },
-
-            include: [
-                {
-                    model: models.ProductVariant,
-                    as: 'variants'
-                }
-            ]
-        });
-    }
 }

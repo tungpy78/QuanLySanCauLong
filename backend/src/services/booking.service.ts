@@ -7,11 +7,19 @@ import ApiError from '../utils/ErrorClass.js';
 import { BOOKING_STATUS_TRANSITIONS, PAYMENT_STATUS_TRANSITIONS } from '../constants/booking.constant.js';
 import { PricingService } from './pricing.service.js';
 import { VNPayUtils } from '../utils/vnpay.js';
+import { bookingSlotRepository } from '../repositories/bookingSlot.repository.js';
+import { courtRepository } from '../repositories/court.repository.js';
+import { facilityRepository } from '../repositories/facility.repository.js';
+import { priceConfigRepository } from '../repositories/priceConfig.repository.js';
+import { StandardPricingStrategy } from '../patterns/strategies/pricing/standard-pricing.strategy.js';
+import { PricingContext } from '../patterns/strategies/pricing/pricing.context.js';
+import { bookingRepository } from '../repositories/booking.repository.js';
+import { userRepository } from '../repositories/user.repository.js';
 
 export class BookingService {
     static async getAvailableCourts(startDateTime: Date, endDateTime: Date, courtType?: string) {
         
-        const bookedSlots = await models.BookingSlot.findAll({
+        const bookedSlots = await bookingSlotRepository.findAll({
             where: {
                 [Op.and]: [
                     { start_at: { [Op.lt]: endDateTime } },
@@ -34,14 +42,7 @@ export class BookingService {
         }
 
         
-        const availableCourts = await models.Court.findAll({
-            where: whereCondition,
-            include: [{
-                model: models.Facility,
-                as: 'facility',
-                attributes: ['id', 'name', 'address']
-            }]
-        });
+       const availableCourts = await courtRepository.findAllWithFacility(whereCondition);
 
         
         // 3. Tính giá cho từng sân khả dụng
@@ -75,26 +76,27 @@ export class BookingService {
     }
 
     static async getDailyBookedSlots(facilityId: number, date: string, courtType: string) {
-        // 1. Lấy danh sách sân của cơ sở và loại sân này
-        const courts = await models.Court.findAll({
-            where: {
-                facility_id: facilityId,
-                court_type: courtType,
-                is_active: true
-            },
+        const facility = await facilityRepository.findById(facilityId);
+        if (!facility) {
+            throw new ApiError('Cơ sở không tồn tại', 404);
+        }
+        
+        const START_HOUR = parseInt(facility.open_time.split(':')[0]);
+        const END_HOUR = parseInt(facility.close_time.split(':')[0]);
+
+        const courts = await courtRepository.findAll({
+            where: { facility_id: facilityId, court_type: courtType, is_active: true },
             attributes: ['id', 'name', 'court_type', 'facility_id'],
             raw: true
         });
 
-        if (courts.length === 0) {
-            return { courts: [], slotsByCourtId: {} };
-        }
+        if (courts.length === 0) return { courts: [], slotsByCourtId: {} };
 
-        // 2. Lấy tất cả các slot đã đặt trong ngày đó cho các sân này
+        // 3. Lấy tất cả các slot đã đặt
         const startOfDay = dayjs(date).startOf('day').toDate();
         const endOfDay = dayjs(date).endOf('day').toDate();
 
-        const bookedSlots = await models.BookingSlot.findAll({
+        const bookedSlots = await bookingSlotRepository.findAll({
             where: {
                 court_id: { [Op.in]: courts.map(c => c.id) },
                 [Op.and]: [
@@ -111,19 +113,11 @@ export class BookingService {
             attributes: ['court_id', 'start_at', 'end_at', 'booking_id', 'price_cents'],
             raw: true
         });
-
-        // 3. Lấy cấu hình giá để tính giá cho từng slot
-        const priceConfigs = await models.PriceConfig.findAll({
-            where: {
-                facility_id: facilityId,
-                court_type: courtType
-            },
+        
+        const priceConfigs = await priceConfigRepository.findAll({
+            where: { facility_id: facilityId, court_type: courtType },
             raw: true
         });
-
-        // 4. Tạo Grid giờ (06:00 - 22:00, bước nhảy 1 tiếng)
-        const START_HOUR = 6;
-        const END_HOUR = 22;
         const slotsByCourtId: Record<number, any[]> = {};
 
         courts.forEach(court => {
@@ -138,8 +132,11 @@ export class BookingService {
                         dayjs(bs.end_at).isAfter(slotStart);
                 });
 
+                const strategy = new StandardPricingStrategy();
+                const pricingContext = new PricingContext(strategy);
+
                 // Tính giá cho khung giờ này
-                const { totalPrice } = PricingService.calculateFromConfigs(
+                const { totalPrice } = pricingContext.executeCalculation(
                     priceConfigs, 
                     slotStart.toDate(), 
                     slotEnd.toDate()
@@ -174,7 +171,7 @@ export class BookingService {
         const startDateTime = dayjs(`${data.date} ${data.start_time}`, 'YYYY-MM-DD HH:mm').toDate();
         const endDateTime = dayjs(`${data.date} ${data.end_time}`, 'YYYY-MM-DD HH:mm').toDate();
 
-        const court = await models.Court.findOne({
+        const court = await courtRepository.findOne({
             where: { id: data.court_id, is_active: true }
         });
 
@@ -195,7 +192,7 @@ export class BookingService {
 
         const t = await sequelize.transaction();
         try {
-            const conflictingSlot = await models.BookingSlot.findOne({
+            const conflictingSlot = await bookingSlotRepository.findOne({
                 where: {
                     court_id: data.court_id,
                     [Op.and]: [
@@ -211,7 +208,7 @@ export class BookingService {
             }
 
             const MIN_DURATION_MINUTES = 60;
-            const previousBooking = await models.BookingSlot.findOne({
+            const previousBooking = await bookingSlotRepository.findOne({
                 where: {
                     court_id: data.court_id,
                     end_at: { [Op.lte]: startDateTime }
@@ -231,7 +228,7 @@ export class BookingService {
                 }
             }
 
-            const nextBooking = await models.BookingSlot.findOne({
+            const nextBooking = await bookingSlotRepository.findOne({
                 where: {
                     court_id: data.court_id,
                     start_at: { [Op.gte]: endDateTime }
@@ -251,14 +248,14 @@ export class BookingService {
                 }
             }
 
-            const newBooking = await models.Booking.create({
+            const newBooking = await bookingRepository.create({
                 user_id: userId,
                 facility_id: data.facility_id,
                 total_cents: calculatedPrice,
                 payment_method: data.payment_method || 'cash',
             }, { transaction: t });
 
-            await models.BookingSlot.create({
+            await bookingSlotRepository.create({
                 booking_id: newBooking.id,
                 court_id: data.court_id,
                 start_at: startDateTime,
@@ -277,25 +274,7 @@ export class BookingService {
     }
 
     static async getMyBookings(userId: number) {
-        const bookings = await (models.Booking as any).findAll({
-            where: { user_id: userId },
-            include: [
-                { model: models.Facility, as: 'facility' },
-                { 
-                    model: models.BookingSlot, 
-                    as: 'slots',
-                    include: [
-                        { 
-                            model: models.Court, 
-                            as: 'court'
-                        }
-                    ]
-                }
-            ],
-            order: [['created_at', 'DESC']]
-        });
-        
-        return bookings;
+        return await bookingRepository.findAllWithDetails({ user_id: userId });
     }
 
     static async getAllBookings(facilityId?: number) {
@@ -305,73 +284,17 @@ export class BookingService {
             whereCondition.facility_id = facilityId;
         }
 
-        return await models.Booking.findAll({
-            where: whereCondition,
-            include: [
-                {
-                    model: models.User,
-                    as: 'user',
-                    attributes: ['id', 'email', 'phone', 'full_name']
-                },
-                {
-                    model: models.Facility,
-                    as: 'facility',
-                    attributes: ['name']
-                },
-                {
-                    model: models.BookingSlot,
-                    as: 'slots',
-                    include: [
-                        {
-                            model: models.Court,
-                            as: 'court',
-                            attributes: ['name']
-                        }
-                    ]
-                }
-            ]
-        });
+        return await bookingRepository.findAllWithDetails(whereCondition);
     }
 
     static async getByBookingId(bookingId: number) {
-        // Sử dụng findByPk (Find By Primary Key) kết hợp Include (JOIN)
-        const booking = await models.Booking.findByPk(bookingId, {
-            include: [
-                {
-                    model: models.User,
-                    as: 'user', // 🔥 Lưu ý: Khớp với alias khai báo trong DB
-                    attributes: ['id', 'full_name', 'phone', 'email'] // Lấy đúng các trường Frontend cần
-                },
-                {
-                    model: models.Facility,
-                    as: 'facility',
-                    attributes: ['id', 'name']
-                },
-                {
-                    model: models.BookingSlot,
-                    as: 'slots',
-                    attributes: ['id', 'court_id', 'start_at', 'end_at', 'price_cents'],
-                    include: [
-                        {
-                            model: models.Court,
-                            as: 'court',
-                            attributes: ['id', 'name']
-                        }
-                    ]
-                }
-            ]
-        });
-
-        // Xử lý lỗi nếu ID tào lao
-        if (!booking) {
-            throw new ApiError('Không tìm thấy thông tin đơn đặt sân này!', 404);
-        }
-
+        const booking = await bookingRepository.findByIdWithDetails(bookingId);
+        if (!booking) throw new ApiError('Không tìm thấy thông tin đơn đặt sân này!', 404);
         return booking;
     }
 
     static async updateBookingStatus(id: number, data: UpdateBookingStatusInput) {
-        const booking = await models.Booking.findByPk(id);
+        const booking = await bookingRepository.findById(id);
         if(!booking) throw new ApiError('Không tìm thấy lịch đặt này', 404);
 
         if(data.status && data.status != booking.status) {
@@ -415,23 +338,11 @@ export class BookingService {
         const { customer_phone, ...bookingData } = data;
 
         // 1. Tìm hoặc tạo user qua SĐT
-        let user = await models.User.findOne({
-            where: { phone: customer_phone, role: 'customer' }
-        });
+        let user = await userRepository.findCustomerByPhone(customer_phone);
 
         const isNewUser = !user;
         if (!user) {
-            const randomPassword = Math.random().toString(36).slice(-8);
-            const salt = await (import('bcryptjs').then(m => m.default.genSalt(10)));
-            const hashedPassword = await (import('bcryptjs').then(m => m.default.hash(randomPassword, salt)));
-            const dummyEmail = `guest_${customer_phone}@thethaovip.local`;
-
-            user = await models.User.create({
-                email: dummyEmail,
-                phone: customer_phone,
-                password_hash: hashedPassword,
-                role: 'customer'
-            });
+            user = await (await import('./user.service.js')).UserService.createGuestUser(customer_phone, 'Khách vãng lai');
         }
 
         const result = await this.createBooking(user.id, bookingData);
@@ -447,7 +358,7 @@ export class BookingService {
 
     static async generateVNPayUrl(bookingId: number, ipAddr: string) {
         // 1. Tìm đơn hàng
-        const booking = await models.Booking.findByPk(bookingId);
+        const booking = await bookingRepository.findById(bookingId);
         
         if (!booking) {
             throw new ApiError('Không tìm thấy đơn đặt sân', 404);

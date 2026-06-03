@@ -1,11 +1,10 @@
 import bcrypt from 'bcryptjs';
 import models from '../models/index.js';
+import { userRepository } from '../repositories/user.repository.js';
 
 export class UserService {
     static async getUserByPhone(phone: string) {
-        return await models.User.findOne({
-            where: { phone, role: 'customer' }
-        });
+        return await userRepository.findCustomerByPhone(phone);
     }
 
     static async createGuestUser(phone: string, fullName: string) {
@@ -16,7 +15,7 @@ export class UserService {
 
         const dummyEmail = `guest_${phone}@thethaovip.local`; 
 
-        return await models.User.create({
+        return await userRepository.create({
             email: dummyEmail,
             full_name:fullName,
             phone: phone,

@@ -79,28 +79,4 @@ export class OrderService {
         return order;
     }
 
-    static async getMyOrders(userId: number) {
-        return await models.Order.findAll({
-            where: { user_id: userId },
-            include: [
-                {
-                    model: models.OrderItem,
-                    as: 'items',
-                    include: [
-                        {
-                            model: models.ProductVariant,
-                            as: 'variant',
-                            include: [
-                                {
-                                    model: models.Product,
-                                    as: 'product'
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ],
-            order: [['created_at', 'DESC']]
-        });
-    }
 }

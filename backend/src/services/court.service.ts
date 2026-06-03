@@ -2,40 +2,19 @@ import { Op } from "sequelize";
 import models from "../models/index.js";
 import ApiError from "../utils/ErrorClass.js";
 import type { CreateCourtInput, UpdateCourtInput } from "../validations/court.validation.js";
+import { courtRepository } from "../repositories/court.repository.js";
 
 export class CourtService {
     static async getAllCourts() {
-        return await models.Court.findAll({
-            where: { is_active: true },
-            order: [['created_at', 'DESC']],
-            include:[
-                {
-                    model: models.Facility,
-                    as: "facility",
-                    attributes:['id', 'name', 'address']
-                }
-            ]
-        });
+        return await courtRepository.findAllWithFacility({is_active: true});
     }
 
     static async getAllCourtsByAdmin() {
-        return await models.Court.findAll({
-            order: [['created_at', 'DESC']],
-            include:[
-                {
-                    model: models.Facility,
-                    as: "facility",
-                    attributes:['id', 'name', 'address']
-                }
-            ]
-        });
+        return await courtRepository.findAllWithFacility({});
     }
 
     static async getCourtById(id: number) {
-        const court = await models.Court.findOne({
-            where: {id: id, is_active: true },
-            include: [{model: models.Facility, as: "facility", attributes: ['id', 'name', 'address']}]
-        });
+        const court = await courtRepository.findByIdWithFacility(id, {is_active: true});
         if(!court) {
             throw new ApiError("Không tìm thấy sân này", 404);
         }
@@ -44,10 +23,7 @@ export class CourtService {
     }
 
     static async getCourtByIdByAdmin(id: number) {
-        const court = await models.Court.findOne({
-            where: {id: id },
-            include: [{model: models.Facility, as: "facility", attributes: ['id', 'name', 'address']}]
-        });
+        const court = await courtRepository.findByIdWithFacility(id);
         if(!court) {
             throw new ApiError("Không tìm thấy sân này", 404);
         }
@@ -56,33 +32,28 @@ export class CourtService {
     }
 
     static async createCourt(data: CreateCourtInput) {
-        const facility = await models.Facility.findOne({
+        const facility = await courtRepository.findOne({
             where: { id: data.facility_id, is_active: true}
         });
         if(!facility) throw new ApiError("Cơ sở này không tồn tại hoặc đã ngừng hoạt động", 404);
 
-        const existingCourt = await models.Court.findOne({
-            where: {
-                name: data.name,
-                facility_id: data.facility_id
-            }
-        });
+        const existingCourt = await courtRepository.findDuplicateNameInFacility(data.name, data.facility_id);
         if(existingCourt){
             if(existingCourt.is_active){
-                await existingCourt.update({ ...data, is_active: true});
+                await courtRepository.update(existingCourt, { ...data, is_active: true});
                 return existingCourt;
             }
             throw new ApiError(`Tên sân '${data.name}' đã tồn tại trong cơ sở này`, 400);
         }
 
-        return await models.Court.create(data);
+        return await courtRepository.create(data);
     }
 
     static async updateCourt(id: number, data: UpdateCourtInput) {
         const court = await this.getCourtByIdByAdmin(id);
 
         if(data.facility_id && data.facility_id !== court.facility_id) {
-            const newFacility = await models.Facility.findOne({
+            const newFacility = await courtRepository.findOne({
                 where: {id: data.facility_id, is_active: true}
             })
             if(!newFacility) throw new ApiError("Cơ sở mới không tồn tại", 404);
@@ -90,24 +61,16 @@ export class CourtService {
 
         if(data.name){
             const checkFacilityId = data.facility_id || court.facility_id;
-            const duplicateName = await models.Court.findOne({
-                where:{
-                    name: data.name,
-                    facility_id: checkFacilityId,
-                    id: { [Op.ne]: id}
-                }
-            });
+            const duplicateName = await courtRepository.findDuplicateNameInFacility(data.name, checkFacilityId, id);
             if (duplicateName) throw new ApiError("Tên sân đã bị trùng trong cơ sở này", 400);
         }
 
-        await court.update(data as any);
-        return court;
+        return await courtRepository.update(id, data)
     }
 
     static async deleteCourt(id: number) {
-         const court = await this.getCourtById(id);    
-
-        await court.destroy(); 
+        await this.getCourtByIdByAdmin(id);
+        await courtRepository.destroy(id);
         
         return { message: 'Đã xóa (mềm) sân thành công' };
     }

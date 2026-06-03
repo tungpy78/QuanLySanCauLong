@@ -13,11 +13,9 @@ import InventoryLevel from './inventory_level.model.js';
 import PriceConfig from './price_config.model.js';
 
 import StaffProfile from './staff_profile.model.js';
-import CartItem from './cart_item.model.js';
 import InventoryMovement from './inventory_movement.model.js';
 import PromoCode from './promo_code.model.js';
 import Payment from './payment.model.js';
-import Notification from './notification.model.js';
 import AuditLog from './audit_log.model.js';
 import RefreshToken from './refresh_token.model.js';
 
@@ -34,9 +32,6 @@ StaffProfile.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
 Facility.hasMany(StaffProfile, { foreignKey: 'facility_id', as: 'staffs' });
 StaffProfile.belongsTo(Facility, { foreignKey: 'facility_id', as: 'facility' });
-
-User.hasMany(Notification, { foreignKey: 'user_id', as: 'notifications' });
-Notification.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
 // --- 2. Cơ sở, Sân & Kho ---
 Facility.hasMany(Court, { foreignKey: 'facility_id', as: 'courts' });
@@ -68,11 +63,6 @@ PromoCode.hasMany(Booking, { foreignKey: 'promo_code_id', as: 'bookings' });
 Product.hasMany(ProductVariant, { foreignKey: 'product_id', as: 'variants' });
 ProductVariant.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 
-User.hasMany(CartItem, { foreignKey: 'user_id', as: 'cart_items' });
-CartItem.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
-
-ProductVariant.hasMany(CartItem, { foreignKey: 'variant_id', as: 'cart_items' });
-CartItem.belongsTo(ProductVariant, { foreignKey: 'variant_id', as: 'variant' });
 
 // --- 5. Đơn hàng Bán lẻ (Orders & Order Items) ---
 User.hasMany(Order, { foreignKey: 'user_id', as: 'orders' });
@@ -162,11 +152,9 @@ const models = {
     PriceConfig,
     StaffProfile,
     RefreshToken,
-    CartItem,
     InventoryMovement,
     PromoCode,
     Payment,
-    Notification,
     AuditLog
 };
 

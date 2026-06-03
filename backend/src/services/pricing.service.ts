@@ -2,15 +2,20 @@ import dayjs from 'dayjs';
 import ApiError from '../utils/ErrorClass.js';
 import models from '../models/index.js';
 import { Op } from 'sequelize';
+import { priceConfigRepository } from '../repositories/priceConfig.repository.js';
+import { StandardPricingStrategy } from '../patterns/strategies/pricing/standard-pricing.strategy.js';
+import { VipPricingStrategy } from '../patterns/strategies/pricing/vip-pricing.strategy.js';
+import { PricingContext } from '../patterns/strategies/pricing/pricing.context.js';
+import { WeekendPricingStrategy } from '../patterns/strategies/pricing/weekend-pricing.strategy.js';
 
 export class PricingService {
-    static async calculateTotalPrice(facilityId: number, courtType: string, startDateTime: Date, endDateTime: Date) {
+    static async calculateTotalPrice(facilityId: number, courtType: string, startDateTime: Date, endDateTime: Date, isVip: boolean = false) {
         const diffInMinutes = dayjs(endDateTime).diff(dayjs(startDateTime), 'minute');
         if (diffInMinutes <= 0) {
             throw new ApiError('Thời gian đặt sân không hợp lệ', 400);
         }
 
-        const configs = await models.PriceConfig.findAll({
+        const configs = await priceConfigRepository.findAll({
             where: {
                 facility_id: facilityId,
                 court_type: courtType
@@ -21,7 +26,20 @@ export class PricingService {
             throw new ApiError('Không tìm thấy cấu hình giá cho sân này. Vui lòng liên hệ Admin.', 400);
         }
 
-        const { totalPrice, totalCalculatedMinutes } = this.calculateFromConfigs(configs, startDateTime, endDateTime);
+        let strategy = new StandardPricingStrategy();
+
+        const dayOfWeek = dayjs(startDateTime).day();
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        
+        if(isVip) {
+            strategy = new VipPricingStrategy();
+        }else if (isWeekend) {
+            // Ưu tiên 2: Khách thường nhưng đá cuối tuần (Phụ thu 20k/h)
+            strategy = new WeekendPricingStrategy();
+        }
+
+        const pricingContext = new PricingContext(strategy);
+        const {totalPrice, totalCalculatedMinutes} = pricingContext.executeCalculation(configs, startDateTime, endDateTime);
 
         if (totalCalculatedMinutes < diffInMinutes) {
             throw new ApiError('Khung giờ bạn đặt chứa khoảng thời gian chưa được thiết lập giá (Lỗi hệ thống). Vui lòng đổi giờ khác.', 400);
@@ -30,32 +48,5 @@ export class PricingService {
         return Math.ceil(totalPrice);
     }
 
-    static calculateFromConfigs(configs: any[], startDateTime: Date, endDateTime: Date) {
-        const bStartMins = dayjs(startDateTime).hour() * 60 + dayjs(startDateTime).minute();
-        const bEndMins = dayjs(endDateTime).hour() * 60 + dayjs(endDateTime).minute();
-
-        let totalPrice = 0;
-        let totalCalculatedMinutes = 0;
-
-        for (const config of configs) {
-            const [cStartHour = 0, cStartMin = 0] = config.start_time.split(':').map(Number);
-            const [cEndHour = 0, cEndMin = 0] = config.end_time.split(':').map(Number);
-            
-            const cStartMins = cStartHour * 60 + cStartMin;
-            const cEndMins = cEndHour * 60 + cEndMin;
-            
-            const overlapStart = Math.max(bStartMins, cStartMins);
-            const overlapEnd = Math.min(bEndMins, cEndMins);
-
-            if (overlapStart < overlapEnd) {
-                const overlapMinutes = overlapEnd - overlapStart;
-                const overlapHours = overlapMinutes / 60;
-                
-                totalPrice += overlapHours * config.price_per_hour;
-                totalCalculatedMinutes += overlapMinutes;
-            }
-        }
-
-        return { totalPrice, totalCalculatedMinutes };
-    }
+    
 }

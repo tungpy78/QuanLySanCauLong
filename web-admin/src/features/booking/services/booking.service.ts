@@ -16,7 +16,7 @@ export const BookingService = {
   },
 
   getDailySlots: async (facility_id: number, date: string, court_type: string) => {
-    return await axiosClient.get<any, ApiResponse<DailySlotGridResponse>>('/app/bookings/daily-booked-slots', {
+    return await axiosClient.get<any, ApiResponse<DailySlotGridResponse>>('/admin/bookings/daily-booked-slots', {
       params: { facility_id, date, court_type }
     });
   },
