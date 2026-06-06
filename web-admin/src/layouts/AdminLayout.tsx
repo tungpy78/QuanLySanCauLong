@@ -56,12 +56,21 @@ const AdminLayout: React.FC = () => {
         { key: '/facility/branches', label: 'Quản lý Cơ sở' },
         { key: '/facility/courts', label: 'Quản lý Sân' },
         { key: '/pricing', label: 'Cấu hình bảng giá' },
+        { key: '/holidays', label: 'Cấu hình Ngày lễ' },
       ]
     }] : []),
 
     // CÁC MODULE KHÁC
     { key: '/products', icon: <SettingOutlined />, label: 'Hàng hóa & Kho' },
     { key: '/staff', icon: <UserOutlined />, label: 'Nhân viên' },
+    ...(isAdmin ? [{
+      key: '/settings',
+      icon: <SettingOutlined />,
+      label: 'Cài đặt hệ thống',
+      children: [
+        { key: '/system-configs', label: 'Cấu hình Tham số' },
+      ]
+    }] : []),
   ];
 
   const userMenu = {

@@ -42,7 +42,7 @@ Facility.init(
     timezone: { type: DataTypes.STRING(50), defaultValue: 'Asia/Ho_Chi_Minh' },
     open_time: { type: DataTypes.TIME, defaultValue: '06:00:00' },
     close_time: { type: DataTypes.TIME, defaultValue: '22:00:00' },
-    avatar_url: { type: DataTypes.STRING(255), allowNull: true },
+    avatar_url: { type: DataTypes.TEXT, allowNull: true },
     cancel_policy: { type: DataTypes.JSON, allowNull: true },
     is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
   },

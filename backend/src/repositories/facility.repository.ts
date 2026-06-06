@@ -17,9 +17,9 @@ class FacilityRepository extends BaseRepository<any> {
 
     async getTrash() {
         return await this.findAll({
-            where: {delete_at: { [Op.ne]: null as any }},
+            where: {deleted_at: { [Op.ne]: null as any }},
             paranoid: false,
-            order: [['delete_at', 'DESC']]
+            order: [['deleted_at', 'DESC']]
         });
     }
 }

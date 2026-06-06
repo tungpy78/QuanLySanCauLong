@@ -11,7 +11,7 @@ export class PaymentService {
 
         const vnp_TxnRef = vnpayQuery.vnp_TxnRef; 
         const vnp_ResponseCode = vnpayQuery.vnp_ResponseCode;
-        const vnp_Amount = Number(vnpayQuery.vnp_Amount) / 100; // VNPay gửi về nhân 100, phải chia ra
+        const vnp_Amount = Number(vnpayQuery.vnp_Amount) / 100;
         
         // Tách lấy bookingId từ orderId (bookingId_timestamp)
         const bookingId = vnp_TxnRef.split('_')[0];
@@ -53,6 +53,16 @@ export class PaymentService {
                     provider_ref: vnpayQuery.vnp_TransactionNo,
                     paid_at: new Date() // Lưu thêm ngày giờ thanh toán
                 }, { transaction: t });
+
+                if (booking.user_id) {
+                    const { UserService } = await import('./user.service.js');
+                    
+                    await UserService.addPointsAndUpgrade(
+                        booking.user_id, 
+                        booking.total_cents, 
+                        t
+                    );
+                }
 
             } else {
                 // --- THẤT BẠI ---

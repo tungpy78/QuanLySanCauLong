@@ -7,7 +7,8 @@ import { FacilityService } from '../../facility/services/facility.service';
 import { useAuthStore } from '../../auth/store/auth.store';
 import type { AxiosError } from 'axios';
 import type { ApiErrorResponse } from '../../../types/api.type';
-import type { BookedSlotDTO, CreateBookingPayload, FacilityLite, CourtLite, BookingFormValues } from '../types/booking.types';
+import type { BookedSlotDTO, CreateBookingPayload, CourtLite, BookingFormValues } from '../types/booking.types';
+import type { Facility } from '../../facility/types/facility.type';
 
 dayjs.extend(isBetween);
 
@@ -19,6 +20,7 @@ interface UseBookingFormProps {
     facility_id?: number;
     court_type?: string;
     court_id?: number;
+    play_date?: string;
     start_time?: string;
   } | null;
 }
@@ -28,9 +30,11 @@ export const useBookingForm = ({ open, onSuccess, onClose, initialData }: UseBoo
   
   const [loading, setLoading] = useState(false);
   const [searchingPhone, setSearchingPhone] = useState(false);
+
+  const [isExistingUser, setIsExistingUser] = useState(false);
   
   const [bookedSlots, setBookedSlots] = useState<BookedSlotDTO[]>([]);
-  const [facilities, setFacilities] = useState<FacilityLite[]>([]);
+  const [facilities, setFacilities] = useState<Facility[]>([]);
   const [facilityCourts, setFacilityCourts] = useState<CourtLite[]>([]);
   const [availableCourtTypes, setAvailableCourtTypes] = useState<string[]>([]);
   const [courts, setCourts] = useState<CourtLite[]>([]);
@@ -46,6 +50,8 @@ export const useBookingForm = ({ open, onSuccess, onClose, initialData }: UseBoo
   useEffect(() => {
     if (open) {
       form.resetFields();
+      setIsExistingUser(false);
+
       FacilityService.getAllFacilities()
         .then(res => setFacilities(res.data))
         .catch(err => console.error("Lỗi lấy cơ sở:", err));
@@ -55,7 +61,7 @@ export const useBookingForm = ({ open, onSuccess, onClose, initialData }: UseBoo
             facility_id: initialData.facility_id,
             court_type: initialData.court_type,
             court_id: initialData.court_id,
-            // Chuyển chuỗi "08:00" thành Dayjs object cho TimePicker
+            play_date: initialData.play_date ? dayjs(initialData.play_date) : undefined,
             start_time: initialData.start_time ? dayjs(initialData.start_time, 'HH:mm') : undefined
          });
       } else if (staffFacilityId) {
@@ -132,12 +138,27 @@ export const useBookingForm = ({ open, onSuccess, onClose, initialData }: UseBoo
       setSearchingPhone(true);
       const res = await BookingService.getUserByPhone(phone);
       if (res.data && res.data.full_name) {
-        form.setFieldValue('full_name', res.data.full_name);
-        message.success(`Đã tự động điền thông tin khách: ${res.data.full_name}`);
+        form.setFieldsValue({
+          full_name: res.data.full_name,
+          membership_type: res.data.membership_type || 'standard'
+        });
+        setIsExistingUser(true);
+        message.success(`Đã tự động điền thông tin khách: ${res.data.full_name} (${res.data.membership_type})`);
+      }else {
+        // --- KHÁCH MỚI (Trường hợp API trả về 200 nhưng data rỗng) ---
+        form.setFieldsValue({ full_name: '', membership_type: 'standard' });
+        setIsExistingUser(false);
+        message.info('Khách hàng mới. Vui lòng nhập tên và loại khách!');
       }
     } catch (error: any) {
-      if (error.response?.status !== 404) console.error("Lỗi gọi API tìm SĐT:", error);
-      else form.setFieldValue('full_name', undefined);
+      form.setFieldsValue({ full_name: '', membership_type: 'standard' });
+      setIsExistingUser(false);
+      
+      if (error.response?.status === 404) {
+          message.info('Khách hàng mới. Vui lòng nhập tên và loại khách!');
+      } else {
+          console.error("Lỗi gọi API tìm SĐT:", error);
+      }
     } finally {
       setSearchingPhone(false);
     }
@@ -167,6 +188,7 @@ export const useBookingForm = ({ open, onSuccess, onClose, initialData }: UseBoo
       const payload: CreateBookingPayload = {
         customer_phone: values.phone,
         customer_name: values.full_name,
+        membership_type: values.membership_type,
         facility_id: values.facility_id,
         court_id: values.court_id,
         date: values.play_date.format('YYYY-MM-DD'),
@@ -192,6 +214,7 @@ export const useBookingForm = ({ open, onSuccess, onClose, initialData }: UseBoo
     form,
     loading,
     searchingPhone,
+    isExistingUser,
     facilities,
     availableCourtTypes,
     courts,

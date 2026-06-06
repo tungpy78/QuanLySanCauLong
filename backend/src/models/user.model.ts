@@ -10,6 +10,7 @@ export interface UserAttributes {
   password_hash: string;
   avatar_url: string | null;
   role: 'admin' | 'staff' | 'customer';
+  membership_type: 'standard' | 'student' | 'vip';
   loyalty_points: number;
   is_active: boolean;
   created_at?: Date;
@@ -29,6 +30,7 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   declare password_hash: string;
   declare avatar_url: string | null;
   declare role: 'admin' | 'staff' | 'customer';
+  declare membership_type: 'standard' | 'student' | 'vip';
   declare loyalty_points: number;
   declare is_active: boolean;
 
@@ -73,6 +75,10 @@ User.init(
     role: {
       type: DataTypes.ENUM('admin', 'staff', 'customer'),
       defaultValue: 'customer',
+    },
+    membership_type: {
+    type: DataTypes.ENUM('standard', 'student', 'vip'),
+    defaultValue: 'standard',
     },
     loyalty_points: {
       type: DataTypes.INTEGER,

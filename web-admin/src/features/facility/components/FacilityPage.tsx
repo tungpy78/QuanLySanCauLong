@@ -159,9 +159,16 @@ const FacilityPage = () => {
                 // 🔥 NẾU Ở DANH SÁCH BÌNH THƯỜNG -> HIỆN SỬA & XÓA
                 return (
                     <Space size="middle">
-                        <Button type="text" className="text-green-500" onClick={() => { /* ... code cũ */ }}>
-                            Sửa
-                        </Button>
+                        <Button 
+                        type="text" 
+                        className="text-green-500" 
+                        onClick={() => { 
+                            setEditingFacility(record);
+                            setOpenModal(true);
+                        }}
+                    >
+                        Sửa
+                    </Button>
 
                         <Popconfirm title="Xóa cơ sở" description="Bạn có chắc muốn xóa cơ sở này?" okText="Xóa" cancelText="Hủy" okButtonProps={{danger: true}} onConfirm={() => handleDelete(record.id)}>
                             <Button danger type="text" icon={<DeleteOutlined />} />

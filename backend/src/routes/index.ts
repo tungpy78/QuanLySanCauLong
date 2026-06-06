@@ -9,6 +9,8 @@ import priceConfigRouter from './admin/price_config.route.js';
 import adminUserRouter from './admin/user.routes.js'
 import uploadRouter from './upload.routes.js'
 import paymentRouter from './admin/payment.route.js'
+import systemConfigRouter from './admin/systemConfig.route.js'
+import holidayRouter from './admin/holiday.route.js'
 
 
 const rootRouter = Router();
@@ -21,5 +23,7 @@ rootRouter.use('/admin/price-configs', priceConfigRouter);
 rootRouter.use('/admin/users', adminUserRouter);
 rootRouter.use('/admin/payments', paymentRouter)
 rootRouter.use('/upload', uploadRouter);
+rootRouter.use('/admin/system-configs', systemConfigRouter);
+rootRouter.use('/admin/holidays', holidayRouter);
 
 export default rootRouter;

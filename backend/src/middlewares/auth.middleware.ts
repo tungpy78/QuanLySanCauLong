@@ -42,6 +42,7 @@ export const optionalToken = (req: Request, res: Response, next: NextFunction) =
         };
     } catch (error) {
         // Bỏ qua lỗi token nếu là optional
+        next(error)
     }
     next();
 };

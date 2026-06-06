@@ -138,7 +138,8 @@ const BookingPage: React.FC = () => {
     <BookingDetailDrawer 
         open={isDrawerOpen} 
         onClose={() => setIsDrawerOpen(false)} 
-        booking={selectedBooking} 
+        booking={selectedBooking}   
+        onRefresh={fetchBookings}
     />
 
     <BookingStatusModal

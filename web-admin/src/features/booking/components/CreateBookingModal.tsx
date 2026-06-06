@@ -12,13 +12,14 @@ interface CreateBookingModalProps {
     facility_id?: number;
     court_type?: string;
     court_id?: number;
+    play_date?: string;
     start_time?: string;
   } | null;
 }
 
 const CreateBookingModal: React.FC<CreateBookingModalProps> = ({ open, onClose, onSuccess, initialData }) => {
   const {
-    form, loading, searchingPhone, facilities, availableCourtTypes, courts,
+    form, loading, searchingPhone, isExistingUser, facilities, availableCourtTypes, courts,
     staffFacilityId, selectedCourtId, selectedCourtType, selectedDate, selectedFacilityId,
     currentCourtBookedSlots, handleSearchPhone, checkOverlappingTime, handleSubmit
   } = useBookingForm({ open, onSuccess, onClose, initialData });
@@ -62,7 +63,20 @@ const CreateBookingModal: React.FC<CreateBookingModalProps> = ({ open, onClose, 
           </Col>
           <Col span={12}>
             <Form.Item label="Họ và tên" name="full_name">
-              <Input placeholder="Nguyễn Văn A..." />
+              <Input placeholder="Nguyễn Văn A..."disabled={isExistingUser} />
+            </Form.Item>
+          </Col>
+          <Col span={8}>
+            <Form.Item 
+              label="Loại khách hàng" 
+              name="membership_type" 
+              initialValue="standard"
+            >
+              <Select placeholder="-- Chọn loại --" disabled={isExistingUser}>
+                <Select.Option value="standard">Khách thường</Select.Option>
+                <Select.Option value="student">Học sinh - Sinh viên</Select.Option>
+                <Select.Option value="vip">Khách VIP</Select.Option>
+              </Select>
             </Form.Item>
           </Col>
         </Row>

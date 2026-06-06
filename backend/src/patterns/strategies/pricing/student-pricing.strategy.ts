@@ -1,19 +1,20 @@
+// src/patterns/strategies/pricing/student-pricing.strategy.ts
 import type { IPriceStrategy } from './pricing.strategy.js';
 import { StandardPricingStrategy } from './standard-pricing.strategy.js';
 
-export class WeekendPricingStrategy implements IPriceStrategy {
+export class StudentPricingStrategy implements IPriceStrategy {
     private standardStrategy = new StandardPricingStrategy();
-    private surchargePercent: number;
+    private discountPercent: number;
 
     constructor(discountPercent: number) {
-        this.surchargePercent = discountPercent;
+        this.discountPercent = discountPercent;
     }
 
     calculate(configs: any[], startDateTime: Date, endDateTime: Date) {
         const result = this.standardStrategy.calculate(configs, startDateTime, endDateTime);
         
-       const surchargeMultiplier = 1 + (this.surchargePercent / 100);
-        result.totalPrice = result.totalPrice * surchargeMultiplier;
+        const discountMultiplier = 1 - (this.discountPercent / 100);
+        result.totalPrice = result.totalPrice * discountMultiplier;
         return result;
     }
 }

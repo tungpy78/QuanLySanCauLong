@@ -36,6 +36,7 @@ export interface Booking {
 export interface CreateBookingPayload {
   customer_phone: string;
   customer_name?: string;
+  membership_type: string;
   facility_id: number;
   court_id: number;
   date: string;
@@ -62,6 +63,7 @@ export interface CourtLite {
 export interface BookingFormValues {
   phone: string;
   full_name?: string;
+  membership_type: string;
   facility_id: number;
   court_type: string;
   court_id: number;

@@ -7,9 +7,15 @@ import { StandardPricingStrategy } from '../patterns/strategies/pricing/standard
 import { VipPricingStrategy } from '../patterns/strategies/pricing/vip-pricing.strategy.js';
 import { PricingContext } from '../patterns/strategies/pricing/pricing.context.js';
 import { WeekendPricingStrategy } from '../patterns/strategies/pricing/weekend-pricing.strategy.js';
+import { HolidayPricingStrategy } from '../patterns/strategies/pricing/holiday-pricing.strategy.js';
+import { holidayRepository } from '../repositories/holiday.repository.js';
+import { userRepository } from '../repositories/user.repository.js';
+import type { IPriceStrategy } from '../patterns/strategies/pricing/pricing.strategy.js';
+import { StudentPricingStrategy } from '../patterns/strategies/pricing/student-pricing.strategy.js';
+import { systemConfigRepository } from '../repositories/systemConfig.repository.js';
 
 export class PricingService {
-    static async calculateTotalPrice(facilityId: number, courtType: string, startDateTime: Date, endDateTime: Date, isVip: boolean = false) {
+    static async calculateTotalPrice(facilityId: number, courtType: string, startDateTime: Date, endDateTime: Date, userId?: number | null) {
         const diffInMinutes = dayjs(endDateTime).diff(dayjs(startDateTime), 'minute');
         if (diffInMinutes <= 0) {
             throw new ApiError('Thời gian đặt sân không hợp lệ', 400);
@@ -26,16 +32,44 @@ export class PricingService {
             throw new ApiError('Không tìm thấy cấu hình giá cho sân này. Vui lòng liên hệ Admin.', 400);
         }
 
-        let strategy = new StandardPricingStrategy();
+        const bookingDate = dayjs(startDateTime).format('YYYY-MM-DD');
+        const holiday = await holidayRepository.findOne({ where: { holiday_date: bookingDate } });
+        
+        let userMembership = 'standard';
+        if (userId) {
+            const user = await userRepository.findById(userId);
+            if (user) userMembership = user.membership_type; // 'student' hoặc 'vip'
+        }
 
         const dayOfWeek = dayjs(startDateTime).day();
         const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-        
-        if(isVip) {
-            strategy = new VipPricingStrategy();
-        }else if (isWeekend) {
-            // Ưu tiên 2: Khách thường nhưng đá cuối tuần (Phụ thu 20k/h)
-            strategy = new WeekendPricingStrategy();
+
+        const studentDiscountConfig = await systemConfigRepository.findByKey('STUDENT_DISCOUNT_PERCENT');
+        const weekendSurchargeConfig = await systemConfigRepository.findByKey('WEEKEND_SURCHARGE_PERCENT');
+
+        const studentDiscount = studentDiscountConfig ? Number(studentDiscountConfig.value) : 0;
+        const weekendSurcharge = weekendSurchargeConfig ? Number(weekendSurchargeConfig.value) : 0;
+
+        // 2. NHÀ MÁY CHỌN CHIẾN LƯỢC (Strategy Factory)
+        // Đây là luật Ưu Tiên (Priority Rules): Lễ > VIP > Cuối tuần > Sinh viên > Thường
+        let strategy: IPriceStrategy;
+
+        if (holiday) {
+            strategy = new HolidayPricingStrategy(holiday.surcharge_percent);
+        } 
+        else if (userMembership === 'vip') {
+            strategy = new VipPricingStrategy(); // Có thể cấu hình động luôn % giảm cho VIP
+        } 
+        else if (isWeekend) {
+            // Truyền % phụ thu cuối tuần từ Admin cấu hình
+            strategy = new WeekendPricingStrategy(weekendSurcharge);
+        } 
+        else if (userMembership === 'student') {
+            // Truyền % giảm giá sinh viên từ Admin cấu hình
+            strategy = new StudentPricingStrategy(studentDiscount);
+        } 
+        else {
+            strategy = new StandardPricingStrategy();
         }
 
         const pricingContext = new PricingContext(strategy);

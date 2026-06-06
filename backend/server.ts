@@ -9,6 +9,8 @@ import errorHandlingMiddleware from './src/middlewares/errorHandler.middleware.j
 import { testConnection } from './src/config/database.js';
 import models from './src/models/index.js'
 import rootRouter from './src/routes/index.js';
+import { connectRedis } from './src/config/redis.js';
+import cookieParser from 'cookie-parser';
 
 
 const app: Express = express();
@@ -18,7 +20,12 @@ const PORT = process.env.PORT || 3000;
 // 1. GLOBAL MIDDLEWARES
 // ==========================================
 app.use(helmet()); // Bảo mật HTTP headers
-app.use(cors()); // Cho phép Frontend gọi API
+app.use(cors({
+    origin: process.env.CLIENT_URL || 'http://localhost:5173', // CẤM dùng '*', phải ghi đích danh URL của React
+    credentials: true, // BẮT BUỘC: Cho phép Backend nhận và gửi Cookie
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], // (Tùy chọn) Khai báo các method được phép
+}));
+app.use(cookieParser());
 app.use(express.json()); // Parse body dạng JSON
 app.use(express.urlencoded({ extended: true })); // Parse body dạng form-data
 if (process.env.NODE_ENV === 'development') {
@@ -42,9 +49,12 @@ app.use(errorHandlingMiddleware);
 // ==========================================
 // 4. KHỞI CHẠY SERVER & DATABASE
 // ==========================================
+
 const startServer = async () => {
     // Test kết nối DB trước
     await testConnection();
+
+    await connectRedis();
 
     // Lắng nghe port
     app.listen(PORT, () => {

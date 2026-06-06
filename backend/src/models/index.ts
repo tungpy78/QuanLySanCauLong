@@ -18,6 +18,8 @@ import PromoCode from './promo_code.model.js';
 import Payment from './payment.model.js';
 import AuditLog from './audit_log.model.js';
 import RefreshToken from './refresh_token.model.js';
+import Holiday from './holiday.model.js';
+import SystemConfig from './system_config.model.js';
 
 // ==========================================
 // THIẾT LẬP MỐI QUAN HỆ (ASSOCIATIONS)
@@ -155,7 +157,9 @@ const models = {
     InventoryMovement,
     PromoCode,
     Payment,
-    AuditLog
+    AuditLog,
+    Holiday,
+    SystemConfig
 };
 
 export default models;

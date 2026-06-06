@@ -1,6 +1,6 @@
 import { Op } from 'sequelize';
 import models from '../models/index.js';
-import type { CreateBookingInput, UpdateBookingStatusInput } from '../validations/booking.validation.js';
+import type { CreateBookingByHotlineInput, CreateBookingInput, UpdateBookingStatusInput } from '../validations/booking.validation.js';
 import dayjs from 'dayjs';
 import sequelize from '../config/database.js';
 import ApiError from '../utils/ErrorClass.js';
@@ -187,7 +187,8 @@ export class BookingService {
             data.facility_id, 
             court.court_type,
             startDateTime, 
-            endDateTime
+            endDateTime,
+            userId
         );
 
         const t = await sequelize.transaction();
@@ -200,6 +201,12 @@ export class BookingService {
                         {end_at: { [Op.gt]: startDateTime }}
                     ]
                 },
+                include: [{
+                    model: models.Booking,
+                    as: 'booking',
+                    where: { status: { [Op.ne]: 'cancelled' } },
+                    attributes: ['id', 'status']
+                }],
                 transaction: t,
                 lock: t.LOCK.UPDATE
             });
@@ -213,6 +220,12 @@ export class BookingService {
                     court_id: data.court_id,
                     end_at: { [Op.lte]: startDateTime }
                 },
+                include: [{
+                    model: models.Booking,
+                    as: 'booking',
+                    where: { status: { [Op.ne]: 'cancelled' } },
+                    attributes: ['id']
+                }],
                 order: [['end_at', 'DESC']],
                 transaction: t
             });
@@ -233,6 +246,12 @@ export class BookingService {
                     court_id: data.court_id,
                     start_at: { [Op.gte]: endDateTime }
                 },
+                include: [{
+                    model: models.Booking,
+                    as: 'booking',
+                    where: { status: { [Op.ne]: 'cancelled' } },
+                    attributes: ['id']
+                }],
                 order: [['start_at', 'ASC']],
                 transaction: t
             });
@@ -334,18 +353,30 @@ export class BookingService {
         return { startDateTime, endDateTime };
     }
 
-    static async createBookingByHotline(data: any) {
-        const { customer_phone, ...bookingData } = data;
+    static async createBookingByHotline(data: CreateBookingByHotlineInput) { 
+        
+        const { customer_phone, customer_name, membership_type, ...bookingData } = data;
 
-        // 1. Tìm hoặc tạo user qua SĐT
         let user = await userRepository.findCustomerByPhone(customer_phone);
-
         const isNewUser = !user;
+
         if (!user) {
-            user = await (await import('./user.service.js')).UserService.createGuestUser(customer_phone, 'Khách vãng lai');
+            const nameToSave = customer_name || 'Khách vãng lai';
+            
+            user = await (await import('./user.service.js')).UserService.createGuestUser(
+                customer_phone, 
+                nameToSave, 
+                membership_type 
+            );
         }
 
-        const result = await this.createBooking(user.id, bookingData);
+        const payloadToService = {
+            ...bookingData,
+            status: 'confirmed' as const,
+            payment_method: 'cash' as const,
+        };
+
+        const result = await this.createBooking(user.id, payloadToService);
 
         return {
             booking: result,
