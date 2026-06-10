@@ -1,4 +1,4 @@
-import { Op } from 'sequelize';
+import { Op, Transaction } from 'sequelize';
 import models from '../models/index.js';
 import type { CreateBookingByHotlineInput, CreateBookingInput, UpdateBookingStatusInput } from '../validations/booking.validation.js';
 import dayjs from 'dayjs';
@@ -193,79 +193,9 @@ export class BookingService {
 
         const t = await sequelize.transaction();
         try {
-            const conflictingSlot = await bookingSlotRepository.findOne({
-                where: {
-                    court_id: data.court_id,
-                    [Op.and]: [
-                        {start_at: { [Op.lt]: endDateTime }},
-                        {end_at: { [Op.gt]: startDateTime }}
-                    ]
-                },
-                include: [{
-                    model: models.Booking,
-                    as: 'booking',
-                    where: { status: { [Op.ne]: 'cancelled' } },
-                    attributes: ['id', 'status']
-                }],
-                transaction: t,
-                lock: t.LOCK.UPDATE
-            });
-            if(conflictingSlot) {
-                throw new ApiError('Rất tiếc, sân này vừa có người đặt mất rồi. Vui lòng chọn sân khác!', 400);
-            }
+            await this.checkConflictingSlot(data.court_id, startDateTime, endDateTime, t);
 
-            const MIN_DURATION_MINUTES = 60;
-            const previousBooking = await bookingSlotRepository.findOne({
-                where: {
-                    court_id: data.court_id,
-                    end_at: { [Op.lte]: startDateTime }
-                },
-                include: [{
-                    model: models.Booking,
-                    as: 'booking',
-                    where: { status: { [Op.ne]: 'cancelled' } },
-                    attributes: ['id']
-                }],
-                order: [['end_at', 'DESC']],
-                transaction: t
-            });
-
-            if(previousBooking) {
-                const gapBefore = dayjs(startDateTime).diff(dayjs(previousBooking.end_at), 'minute');
-                
-                if(gapBefore > 0 && gapBefore < MIN_DURATION_MINUTES ) {
-                    throw new ApiError (
-                        `Không thể đặt! Sẽ tạo ra khoảng trống ${gapBefore} phút (từ ${dayjs(previousBooking.end_at).format('HH:mm')} đến ${dayjs(startDateTime).format('HH:mm')}) không đủ để người khác thuê.`,
-                        400
-                    );
-                }
-            }
-
-            const nextBooking = await bookingSlotRepository.findOne({
-                where: {
-                    court_id: data.court_id,
-                    start_at: { [Op.gte]: endDateTime }
-                },
-                include: [{
-                    model: models.Booking,
-                    as: 'booking',
-                    where: { status: { [Op.ne]: 'cancelled' } },
-                    attributes: ['id']
-                }],
-                order: [['start_at', 'ASC']],
-                transaction: t
-            });
-
-            if(nextBooking) {
-                const gapAfter = dayjs(nextBooking.start_at).diff(dayjs(endDateTime), 'minute');
-                
-                if(gapAfter > 0 && gapAfter < MIN_DURATION_MINUTES) {
-                    throw new ApiError(
-                        `Không thể đặt! Sẽ tạo ra khoảng trống ${gapAfter} phút (từ ${dayjs(endDateTime).format('HH:mm')} đến ${dayjs(nextBooking.start_at).format('HH:mm')}) không đủ để người khác thuê.`,
-                        400
-                    );
-                }
-            }
+            await this.checkSmartGapRules(data.court_id, startDateTime, endDateTime, t);
 
             const newBooking = await bookingRepository.create({
                 user_id: userId,
@@ -289,6 +219,84 @@ export class BookingService {
         } catch (error) {
             await t.rollback();
             throw error;
+        }
+    }
+
+    private static async checkConflictingSlot(courtId: number, start: Date, end: Date, t: Transaction) {
+        const conflictingSlot = await bookingSlotRepository.findOne({
+            where: {
+                court_id: courtId,
+                [Op.and]: [
+                    {start_at: { [Op.lt]: end }},
+                    {end_at: { [Op.gt]: start }}
+                ]
+            },
+            include: [{
+                model: models.Booking,
+                as: 'booking',
+                where: { status: { [Op.ne]: 'cancelled' } },
+                attributes: ['id', 'status']
+            }],
+            transaction: t,
+            lock: t.LOCK.UPDATE
+        });
+        if(conflictingSlot) {
+            throw new ApiError('Rất tiếc, sân này vừa có người đặt mất rồi. Vui lòng chọn sân khác!', 400);
+        }
+    }
+
+    private static async checkSmartGapRules(courtId: number, start: Date, end: Date, t: Transaction) {
+        const MIN_DURATION_MINUTES = 60;
+        const previousBooking = await bookingSlotRepository.findOne({
+            where: {
+                court_id: courtId,
+                end_at: { [Op.lte]: start }
+            },
+            include: [{
+                model: models.Booking,
+                as: 'booking',
+                where: { status: { [Op.ne]: 'cancelled' } },
+                attributes: ['id']
+            }],
+            order: [['end_at', 'DESC']],
+            transaction: t
+        });
+
+        if(previousBooking) {
+            const gapBefore = dayjs(start).diff(dayjs(previousBooking.end_at), 'minute');
+            
+            if(gapBefore > 0 && gapBefore < MIN_DURATION_MINUTES ) {
+                throw new ApiError (
+                    `Không thể đặt! Sẽ tạo ra khoảng trống ${gapBefore} phút (từ ${dayjs(previousBooking.end_at).format('HH:mm')} đến ${dayjs(start).format('HH:mm')}) không đủ để người khác thuê.`,
+                    400
+                );
+            }
+        }
+
+        const nextBooking = await bookingSlotRepository.findOne({
+            where: {
+                court_id: courtId,
+                start_at: { [Op.gte]: end }
+            },
+            include: [{
+                model: models.Booking,
+                as: 'booking',
+                where: { status: { [Op.ne]: 'cancelled' } },
+                attributes: ['id']
+            }],
+            order: [['start_at', 'ASC']],
+            transaction: t
+        });
+
+        if(nextBooking) {
+            const gapAfter = dayjs(nextBooking.start_at).diff(dayjs(end), 'minute');
+            
+            if(gapAfter > 0 && gapAfter < MIN_DURATION_MINUTES) {
+                throw new ApiError(
+                    `Không thể đặt! Sẽ tạo ra khoảng trống ${gapAfter} phút (từ ${dayjs(end).format('HH:mm')} đến ${dayjs(nextBooking.start_at).format('HH:mm')}) không đủ để người khác thuê.`,
+                    400
+                );
+            }
         }
     }
 

@@ -13,6 +13,7 @@ import { userRepository } from '../repositories/user.repository.js';
 import type { IPriceStrategy } from '../patterns/strategies/pricing/pricing.strategy.js';
 import { StudentPricingStrategy } from '../patterns/strategies/pricing/student-pricing.strategy.js';
 import { systemConfigRepository } from '../repositories/systemConfig.repository.js';
+import { PricingStrategyFactory } from '../patterns/factories/pricing-strategy.factory.js';
 
 export class PricingService {
     static async calculateTotalPrice(facilityId: number, courtType: string, startDateTime: Date, endDateTime: Date, userId?: number | null) {
@@ -50,27 +51,9 @@ export class PricingService {
         const studentDiscount = studentDiscountConfig ? Number(studentDiscountConfig.value) : 0;
         const weekendSurcharge = weekendSurchargeConfig ? Number(weekendSurchargeConfig.value) : 0;
 
-        // 2. NHÀ MÁY CHỌN CHIẾN LƯỢC (Strategy Factory)
-        // Đây là luật Ưu Tiên (Priority Rules): Lễ > VIP > Cuối tuần > Sinh viên > Thường
-        let strategy: IPriceStrategy;
-
-        if (holiday) {
-            strategy = new HolidayPricingStrategy(holiday.surcharge_percent);
-        } 
-        else if (userMembership === 'vip') {
-            strategy = new VipPricingStrategy(); // Có thể cấu hình động luôn % giảm cho VIP
-        } 
-        else if (isWeekend) {
-            // Truyền % phụ thu cuối tuần từ Admin cấu hình
-            strategy = new WeekendPricingStrategy(weekendSurcharge);
-        } 
-        else if (userMembership === 'student') {
-            // Truyền % giảm giá sinh viên từ Admin cấu hình
-            strategy = new StudentPricingStrategy(studentDiscount);
-        } 
-        else {
-            strategy = new StandardPricingStrategy();
-        }
+        const strategy = PricingStrategyFactory.createStrategy(
+            holiday, userMembership, isWeekend, studentDiscount, weekendSurcharge
+        )
 
         const pricingContext = new PricingContext(strategy);
         const {totalPrice, totalCalculatedMinutes} = pricingContext.executeCalculation(configs, startDateTime, endDateTime);
