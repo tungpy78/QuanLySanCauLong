@@ -5,5 +5,6 @@ const router = Router();
 
 router.get('/vnpay-ipn', PaymentController.vnpayIpn);
 router.get('/vnpay-return', PaymentController.vnpayReturn);
+router.patch('/:id/pay-cash', PaymentController.payCash);
 
 export default router;

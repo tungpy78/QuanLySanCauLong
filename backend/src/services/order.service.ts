@@ -2,81 +2,343 @@ import models from '../models/index.js';
 import ApiError from '../utils/ErrorClass.js';
 import sequelize from '../config/database.js';
 
-export class OrderService {
-    static async createOrder(userId: number | null, data: any) {
-        const { customer_name, customer_phone, shipping_address, payment_method, items, note, facility_id } = data;
+import { orderRepository } from '../repositories/order.repository.js';
+import { paymentRepository } from '../repositories/payment.repository.js';
+import { orderItemRepository } from '../repositories/order-item.repository.js';
 
-        if (!items || items.length === 0) {
-            throw new ApiError("Giỏ hàng trống", 400);
+import { PaymentFactory } from '../patterns/factories/payment.factory.js';
+
+export class OrderService {
+    static async createOrder(
+        userId: number | null,
+        data: any
+    ) {
+
+        const {
+            customer_name,
+            customer_phone,
+            shipping_address,
+            payment_method,
+            items,
+            note,
+            facility_id
+        } = data;
+
+        if (!items?.length) {
+            throw new ApiError(
+                'Giỏ hàng trống',
+                400
+            );
         }
 
-        const t = await sequelize.transaction();
+        const t =
+            await sequelize.transaction();
 
         try {
-            // Tính toán tổng tiền
-            const subtotalCents = items.reduce((sum: number, it: any) => sum + (it.price_cents * it.quantity), 0);
-            const totalCents = subtotalCents; // Tạm thời chưa có discount
 
-            // Xác định facility_id hợp lệ
-            let targetFacilityId = facility_id;
+            const subtotalCents =
+                items.reduce(
+                    (sum: number, item: any) =>
+                        sum +
+                        item.price_cents *
+                            item.quantity,
+                    0
+                );
+
+            const totalCents =
+                subtotalCents;
+
+            let targetFacilityId =
+                facility_id;
+
             if (!targetFacilityId) {
-                const firstFacility = await models.Facility.findOne({ attributes: ['id'] });
+
+                const firstFacility =
+                    await models.Facility.findOne({
+                        attributes: ['id']
+                    });
+
                 if (!firstFacility) {
-                    throw new ApiError("Hệ thống chưa cấu hình Cơ sở (Facility). Vui lòng liên hệ Admin.", 500);
+                    throw new ApiError(
+                        'Hệ thống chưa cấu hình Facility',
+                        500
+                    );
                 }
-                targetFacilityId = firstFacility.id;
+
+                targetFacilityId =
+                    firstFacility.id;
             }
 
-            // 1. Tạo Đơn hàng
-            const order = await models.Order.create({
-                user_id: userId,
-                facility_id: targetFacilityId,
-                status: 'pending',
-                payment_method,
-                subtotal_cents: subtotalCents,
-                total_cents: totalCents,
-                note: `Khách: ${customer_name || 'N/A'} - ${customer_phone || 'N/A'}. Đ/c: ${shipping_address || 'N/A'}. ${note || ''}`
-            }, { transaction: t });
+            const order =
+                await orderRepository.createOrder(
+                    {
+                        user_id:
+                            userId,
 
-            // 2. Tạo Chi tiết đơn hàng
-            const orderItems = items.map((it: any) => ({
-                order_id: order.id,
-                variant_id: it.product_variant_id,
-                quantity: it.quantity,
-                unit_price_cents: it.price_cents,
-                discount_cents: 0
-            }));
-            
-            await models.OrderItem.bulkCreate(orderItems, { transaction: t });
+                        facility_id:
+                            targetFacilityId,
+
+                        status:
+                            'pending_payment',
+
+                        subtotal_cents:
+                            subtotalCents,
+
+                        total_cents:
+                            totalCents,
+
+                        note:
+                            `Khách: ${
+                                customer_name ||
+                                'N/A'
+                            } - ${
+                                customer_phone ||
+                                'N/A'
+                            }. Đ/c: ${
+                                shipping_address ||
+                                'N/A'
+                            }. ${
+                                note || ''
+                            }`
+                    },
+                    t
+                );
+
+            const orderItems =
+                items.map(
+                    (item: any) => ({
+                        order_id:
+                            order.id,
+
+                        variant_id:
+                            item.product_variant_id,
+
+                        quantity:
+                            item.quantity,
+
+                        unit_price_cents:
+                            item.price_cents,
+
+                        discount_cents:
+                            0
+                    })
+                );
+
+            await orderItemRepository
+                .bulkCreate(
+                    orderItems,
+                    t
+                );
+
+            await paymentRepository
+                .create(
+                    {
+                        provider:
+                            payment_method,
+
+                        amount_cents:
+                            totalCents,
+
+                        order_id:
+                            order.id,
+
+                        status:
+                            'pending'
+                    },
+                    t
+                );
+
+            let paymentResult =
+                null;
+
+            if (payment_method) {
+
+                const strategy =
+                    PaymentFactory.create(
+                        payment_method
+                    );
+
+                paymentResult =
+                    await strategy.process(
+                        order,
+                        t
+                    );
+            }
 
             await t.commit();
-            return order;
+
+            return {
+                order,
+                paymentResult
+            };
+
         } catch (error) {
+
             await t.rollback();
+
             throw error;
         }
     }
 
-    static async cancelOrder(orderId: number, userId: number | null) {
-        const order = await models.Order.findOne({
-            where: {
-                id: orderId,
-                ...(userId ? { user_id: userId } : {}) // Nếu có userId thì phải khớp, nếu không (khách vãng lai) thì tạm chấp nhận id
-            }
-        });
+    static async cancelOrder(
+        orderId: number,
+        userId: number | null
+    ) {
+
+        const order =
+            await orderRepository.findOne({
+                where: {
+                    id: orderId,
+                    ...(userId
+                        ? {
+                              user_id:
+                                  userId
+                          }
+                        : {})
+                }
+            });
 
         if (!order) {
-            throw new ApiError("Không tìm thấy đơn hàng", 404);
+            throw new ApiError(
+                'Không tìm thấy đơn hàng',
+                404
+            );
         }
 
-        if (order.status !== 'pending') {
-            throw new ApiError("Chỉ có thể hủy đơn hàng ở trạng thái chờ xử lý (pending)", 400);
+        if (
+            order.status !==
+            'pending_payment'
+        ) {
+            throw new ApiError(
+                'Chỉ có thể hủy đơn hàng đang chờ xử lý',
+                400
+            );
         }
 
-        order.status = 'cancelled';
-        await order.save();
+        await order.update({
+            status: 'cancelled'
+        });
 
         return order;
     }
 
+    static async getAll() {
+        return orderRepository.getAllFinishedOrders();
+    }
+
+    static async getById(
+        id: number
+    ) {
+
+        const order =
+            await orderRepository
+                .getByIdDetail(id);
+
+        if (!order) {
+            throw new ApiError(
+                'Không tìm thấy đơn hàng',
+                404
+            );
+        }
+
+        return order;
+    }
+
+    static async getMyOrders(
+        userId: number
+    ) {
+
+        return orderRepository
+            .getMyOrders(userId);
+    }
+
+    static async getPendingPickupOrders() {
+
+        return orderRepository
+            .getByStatus(
+                'pending_pickup'
+            );
+    }
+
+    static async getPendingPaymentOrders() {
+
+        return orderRepository
+            .getByStatus(
+                'pending_payment'
+            );
+    }
+
+    static async completeOrder(
+        orderId: number
+    ) {
+
+        const order =
+            await orderRepository.findById(
+                orderId
+            );
+
+        if (!order) {
+            throw new ApiError(
+                'Không tìm thấy đơn hàng',
+                404
+            );
+        }
+
+        if (
+            order.status !==
+            'pending_pickup'
+        ) {
+            throw new ApiError(
+                'Đơn chưa sẵn sàng giao',
+                400
+            );
+        }
+
+        await orderRepository.updateStatus(
+            orderId,
+            'completed'
+        );
+
+        return {
+            message:
+                'Hoàn thành đơn hàng'
+        };
+    }
+
+    static async confirmOrder(
+        orderId: number
+    ) {
+
+        const order =
+            await orderRepository.findById(
+                orderId
+            );
+
+        if (!order) {
+            throw new ApiError(
+                'Không tìm thấy đơn hàng',
+                404
+            );
+        }
+
+        if (
+            order.status !==
+            'pending_payment'
+        ) {
+            throw new ApiError(
+                'Trạng thái đơn không hợp lệ',
+                400
+            );
+        }
+
+        await orderRepository.updateStatus(
+            orderId,
+            'pending_pickup'
+        );
+
+        return {
+            message:
+                'Xác nhận đơn hàng thành công'
+        };
+    }
 }

@@ -8,6 +8,10 @@ import CourtPage from '../features/court/components/CourtPage';
 import PriceConfigPage from '../features/priceConfig/components/PriceConfigPage';
 import HolidayPage from '../features/holiday/components/HolidayPage';
 import SystemConfigPage from '../features/systemConfig/components/SystemConfigPage';
+import OrderPage from '../features/sale/components/OrderPage';
+import PosPage from '../features/sale/components/PosPage';
+import { StaffPage } from '../features/staff/components/StaffPage';
+import { ProductTable } from '../features/product/components/ProductTable';
 
 // --- TẠM THỜI MOCK CÁC COMPONENT ĐỂ TEST UI ---
 const DashboardPage = () => <div className="p-4 font-semibold text-lg text-gray-700">Trang Tổng quan (Thống kê doanh thu)</div>;
@@ -64,6 +68,24 @@ export const router = createBrowserRouter([
         ]
       },
 
+      {
+        path: 'employee',
+        children: [
+          {
+            index: true,
+            element: <Navigate to="pos" replace />
+          },
+          {
+            path: 'pos',
+            element: <PosPage />,
+          },
+          {
+            path: 'orders',
+            element: <OrderPage />,
+          }
+        ]
+      },
+
       // 3. CÁC MODULE ĐỘC LẬP
       {
         path: 'pricing',
@@ -79,11 +101,11 @@ export const router = createBrowserRouter([
       },
       {
         path: 'products',
-        element: <div className="p-4 font-semibold text-lg text-gray-700">Trang Hàng hóa & Kho (W2 code ở đây)</div>,
+        element: <ProductTable />,
       },
       {
         path: 'staff',
-        element: <div className="p-4 font-semibold text-lg text-gray-700">Trang Quản lý Nhân viên</div>,
+        element: <StaffPage />, 
       },
     ],
   },

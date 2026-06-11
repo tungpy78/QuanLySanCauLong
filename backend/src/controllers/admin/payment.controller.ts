@@ -1,6 +1,6 @@
 import { PaymentService } from '../../services/payment.service.js';
 import type { Request, Response, NextFunction } from "express";
-
+import AppResponse from '../../utils/AppResponse.js';
 
 export class PaymentController {
 
@@ -28,6 +28,30 @@ export class PaymentController {
             return res.send(htmlContent);
         } catch (error) {
             next(error);
+        }
+    }
+
+    static async posOrderVNPayIpn(
+        req: Request,
+        res: Response
+    ) {
+        const result =
+            await PaymentService.processPosOrderVNPayIPN(
+                req.query
+            );
+
+        return res.status(200).json(
+            result
+        );
+    }
+
+    static async payCash( req: Request, res: Response, next: NextFunction ) {
+        try {
+            const orderId = Number(req.params.id);
+            const data = await PaymentService.payCash(orderId);
+            return AppResponse.success(res, data, 'Thanh toán tiền mặt thành công');
+        } catch (err) {
+            next(err);
         }
     }
 }

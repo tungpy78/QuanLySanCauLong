@@ -11,7 +11,9 @@ import uploadRouter from './upload.routes.js'
 import paymentRouter from './admin/payment.route.js'
 import systemConfigRouter from './admin/systemConfig.route.js'
 import holidayRouter from './admin/holiday.route.js'
-
+import productRouter from './admin/product.route.js';
+import inventoryRouter from './admin/inventory.route.js';
+import orderRouter from './admin/order.route.js';
 
 const rootRouter = Router();
 
@@ -25,5 +27,8 @@ rootRouter.use('/admin/payments', paymentRouter)
 rootRouter.use('/upload', uploadRouter);
 rootRouter.use('/admin/system-configs', systemConfigRouter);
 rootRouter.use('/admin/holidays', holidayRouter);
+rootRouter.use('/admin/products', productRouter);
+rootRouter.use('/admin/inventory', inventoryRouter);
+rootRouter.use('/admin/orders', orderRouter);
 
 export default rootRouter;
