@@ -53,7 +53,7 @@ erDiagram
 
 | Bảng | Cột chính | Mô tả |
 |------|-----------|-------|
-| `bookings` | id, user_id (nullable = walk-in), facility_id, status (`pending`\|`confirmed`\|`cancelled`\|`completed`\|`no_show`), payment_status (`unpaid`\|`partial`\|`paid`\|`refunded`), total_cents, note, promo_code_id, checked_in_at, cancelled_at, cancel_reason, created_at | Đơn đặt sân (Header). Quản lý trạng thái tổng và tổng tiền thanh toán. |
+| `bookings` | id, user_id (nullable = walk-in), facility_id, status (`pending`\|`confirmed`\|`cancelled`\|`completed`\|`no_show`), payment_status (`unpaid`\|`partial`\|`paid`\|`refunded`), total_cents, note, checked_in_at, cancelled_at, cancel_reason, created_at | Đơn đặt sân (Header). Quản lý trạng thái tổng và tổng tiền thanh toán. |
 | `booking_slots` | id, booking_id, court_id, start_at (Datetime), end_at (Datetime), price_cents | Từng ca/khung giờ nhỏ trong một đơn đặt sân. |
 
 ### 2.5 Sản phẩm & Đơn hàng (Bán lẻ)
@@ -72,13 +72,6 @@ erDiagram
 |------|-----------|-------|
 | `inventory_levels` | id, variant_id, facility_id, quantity_on_hand; UNIQUE `(variant_id, facility_id)` | Quản lý số lượng tồn kho thực tế của từng mặt hàng tại cơ sở. |
 | `inventory_movements` | id, variant_id, facility_id, qty_delta, reason (`sale`\|`return`\|`adjustment`\|`import`), ref_order_id, note, created_at | Lưu lịch sử nhập/xuất kho để đối soát. |
-
-### 2.7 Khuyến mãi & Thanh toán
-
-| Bảng | Cột chính | Mô tả |
-|------|-----------|-------|
-| `promo_codes` | id, code (UNIQUE), type (`percent`\|`fixed`), value, min_order_cents, max_uses, used_count, expires_at, is_active, created_at | Mã giảm giá cho đặt sân hoặc mua hàng. |
-| `payments` | id, provider (`manual_transfer`\|`sandbox`\|`momo`\|`vnpay`), status (`pending`\|`paid`\|`failed`\|`refunded`), amount_cents, booking_id (nullable), order_id (nullable), provider_ref, metadata (JSON), paid_at, created_at | Giao dịch thanh toán (Dùng chung Booking & Order). |
 
 ### 2.8 Hệ thống & Log
 

@@ -76,6 +76,27 @@ class InventoryRepository extends BaseRepository<any> {
         });
     }
 
+    async getVariantLevel(facilityId: number, variantId: number) {
+        return this.findOne({
+            where: {
+                facility_id: facilityId,
+                variant_id: variantId
+            },
+            include: [
+                {
+                    model: models.ProductVariant,
+                    as: 'variant',
+                    include: [
+                        {
+                            model: models.Product,
+                            as: 'product'
+                        }
+                    ]
+                }
+            ]
+        });
+    }
+
     async getMovements(filters: any) {
         const {
             variant_id,
@@ -111,5 +132,4 @@ class InventoryRepository extends BaseRepository<any> {
         });
     }
 }
-
 export const inventoryRepository = new InventoryRepository();

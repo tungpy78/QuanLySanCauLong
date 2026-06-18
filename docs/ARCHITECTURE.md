@@ -84,7 +84,6 @@
 
 | Method | Path | Mô tả |
 |--------|------|--------|
-| GET | `/warehouses/:id/inventory` | Tồn theo kho |
 | POST | `/inventory/adjustments` | Điều chỉnh có lý do |
 
 ### 3.6 Báo cáo (admin)

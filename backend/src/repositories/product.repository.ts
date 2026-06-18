@@ -24,10 +24,8 @@ class ProductRepository extends BaseRepository<any> {
                     include: [
                         {
                             model: models.InventoryLevel,
-                            as: 'inventory', // Thay bằng alias thực tế của bạn nếu khác
-                            required: false, // Thường để false nếu dùng left join
-                            
-                            // Sửa 'facility_id' thành 'facilityId' ở điều kiện kiểm tra và giá trị gán vào
+                            as: 'inventory_levels',
+                            required: false,
                             ...(facilityId ? { where: { facility_id: facilityId } } : {})
                         }
                     ]
@@ -152,7 +150,15 @@ class ProductRepository extends BaseRepository<any> {
 
                     required: true,
 
-                    where: variantWhere
+                    where: variantWhere,
+
+                    include: [
+                        {
+                            model: models.InventoryLevel,
+                            as: 'inventory_levels',
+                            required: false
+                        }
+                    ]
                 }
             ],
 

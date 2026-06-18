@@ -321,39 +321,44 @@ export class PaymentService {
                 );
             }
 
-            const existedPayment =
-                await paymentRepository
-                    .findPaidOrder(
-                        order.id,
-                        t
-                    );
+            const payment = await paymentRepository.findByOrderId(order.id, t);
 
-            if(existedPayment){
+            if (payment && payment.status === 'paid') {
                 throw new ApiError(
                     'Đơn hàng đã thanh toán',
                     400
                 );
             }
 
-            await paymentRepository.create(
-                {
-                    order_id:
-                        order.id,
+            if (payment) {
+                await payment.update(
+                    {
+                        status: 'paid',
+                        paid_at: new Date()
+                    },
+                    { transaction: t }
+                );
+            } else {
+                await paymentRepository.create(
+                    {
+                        order_id:
+                            order.id,
 
-                    provider:
-                        'cash',
+                        provider:
+                            'cash',
 
-                    status:
-                        'paid',
+                        status:
+                            'paid',
 
-                    amount_cents:
-                        order.total_cents,
+                        amount_cents:
+                            order.total_cents,
 
-                    paid_at:
-                        new Date()
-                },
-                t
-            );
+                        paid_at:
+                            new Date()
+                    },
+                    t
+                );
+            }
 
             await this.deductOrderInventory(
                 order.id,

@@ -39,7 +39,6 @@ Extracted at: 5/6/2026, 9:56:31 AM
 | payment_status | enum('unpaid','partial','paid','refunded') | YES |  | unpaid |  |
 | total_cents | int | YES |  | 0 |  |
 | note | text | YES |  |  |  |
-| promo_code_id | int | YES |  |  |  |
 | checked_in_at | datetime | YES |  |  |  |
 | cancelled_at | datetime | YES |  |  |  |
 | cancel_reason | varchar(255) | YES |  |  |  |
@@ -116,7 +115,6 @@ Extracted at: 5/6/2026, 9:56:31 AM
 |--------|------|----------|-----|---------|-------|
 | id | int | NO | PRI |  | auto_increment |
 | variant_id | int | NO | MUL |  |  |
-| warehouse_id | int | NO | MUL |  |  |
 | qty_delta | int | NO |  |  |  |
 | reason | enum('sale','return','adjustment','import') | NO |  |  |  |
 | ref_order_id | int | YES |  |  |  |
@@ -129,7 +127,6 @@ Extracted at: 5/6/2026, 9:56:31 AM
 |--------|------|----------|-----|---------|-------|
 | id | int | NO | PRI |  | auto_increment |
 | user_id | int | NO | MUL |  |  |
-| type | enum('booking_confirmed','booking_reminder','order_status','promotion') | NO |  |  |  |
 | title | varchar(255) | NO |  |  |  |
 | body | text | NO |  |  |  |
 | is_read | tinyint(1) | YES |  | 0 |  |
@@ -229,21 +226,6 @@ Extracted at: 5/6/2026, 9:56:31 AM
 | updated_at | datetime | NO |  |  |  |
 | deleted_at | datetime | YES |  |  |  |
 
-## Table: promo_codes
-
-| Column | Type | Nullable | Key | Default | Extra |
-|--------|------|----------|-----|---------|-------|
-| id | int | NO | PRI |  | auto_increment |
-| code | varchar(50) | NO | UNI |  |  |
-| type | enum('percent','fixed') | NO |  |  |  |
-| value | int | NO |  |  |  |
-| min_order_cents | int | NO |  | 0 |  |
-| max_uses | int | YES |  |  |  |
-| used_count | int | YES |  | 0 |  |
-| expires_at | datetime | YES |  |  |  |
-| active | tinyint(1) | YES |  | 1 |  |
-| created_at | datetime | NO |  |  |  |
-
 ## Table: refresh_tokens
 
 | Column | Type | Nullable | Key | Default | Extra |
@@ -282,13 +264,3 @@ Extracted at: 5/6/2026, 9:56:31 AM
 | full_name | varchar(100) | YES |  |  |  |
 | avatar_url | varchar(255) | YES |  |  |  |
 | loyalty_points | int | YES |  | 0 |  |
-
-## Table: warehouses
-
-| Column | Type | Nullable | Key | Default | Extra |
-|--------|------|----------|-----|---------|-------|
-| id | int | NO | PRI |  | auto_increment |
-| facility_id | int | NO | MUL |  |  |
-| name | varchar(150) | NO |  |  |  |
-| created_at | datetime | NO |  |  |  |
-

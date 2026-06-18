@@ -77,7 +77,6 @@ Table bookings {
   payment_status varchar
   total_cents int
   note text
-  promo_code_id int [ref: > promo_codes.id]
   checked_in_at datetime
   cancelled_at datetime
   cancel_reason text
@@ -147,41 +146,19 @@ Table order_items {
   discount_cents int
 }
 
-Table warehouses {
-  id int [pk, increment]
-  facility_id int [ref: > facilities.id]
-  name varchar
-  created_at datetime
-}
-
 Table inventory_levels {
   id int [pk, increment]
   variant_id int [ref: > product_variants.id]
-  warehouse_id int [ref: > warehouses.id]
   quantity_on_hand int
 }
 
 Table inventory_movements {
   id int [pk, increment]
   variant_id int [ref: > product_variants.id]
-  warehouse_id int [ref: > warehouses.id]
   qty_delta int
   reason varchar // sale, return, adjustment, import
   ref_order_id int [ref: > orders.id, note: 'nullable']
   note text
-  created_at datetime
-}
-
-Table promo_codes {
-  id int [pk, increment]
-  code varchar [unique]
-  type varchar // percent, fixed
-  value int
-  min_order_cents int
-  max_uses int
-  used_count int
-  expires_at datetime
-  active boolean [default: true]
   created_at datetime
 }
 

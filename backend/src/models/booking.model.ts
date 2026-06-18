@@ -7,13 +7,12 @@ export interface BookingAttributes {
   facility_id: number;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
   payment_status: 'unpaid' | 'partial' | 'paid' | 'refunded';
-  
+
   // 🔥 THÊM MỚI: Hình thức thanh toán
-  payment_method: 'cash' | 'vnpay'; 
-  
+  payment_method: 'cash' | 'vnpay';
+
   total_cents: number;
   note: string | null;
-  promo_code_id: number | null;
   checked_in_at: Date | null;
   cancelled_at: Date | null;
   cancel_reason: string | null;
@@ -22,7 +21,7 @@ export interface BookingAttributes {
   deleted_at?: Date;
 }
 
-export interface BookingCreationAttributes extends Optional<BookingAttributes, 'id' | 'status' | 'payment_status' | 'payment_method' | 'total_cents' | 'note' | 'promo_code_id' | 'checked_in_at' | 'cancelled_at' | 'cancel_reason'> {}
+export interface BookingCreationAttributes extends Optional<BookingAttributes, 'id' | 'status' | 'payment_status' | 'payment_method' | 'total_cents' | 'note' | 'checked_in_at' | 'cancelled_at' | 'cancel_reason'> { }
 
 class Booking extends Model<BookingAttributes, BookingCreationAttributes> implements BookingAttributes {
   declare id: number;
@@ -30,13 +29,12 @@ class Booking extends Model<BookingAttributes, BookingCreationAttributes> implem
   declare facility_id: number;
   declare status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
   declare payment_status: 'unpaid' | 'partial' | 'paid' | 'refunded';
-  
+
   // 🔥 THÊM MỚI
   declare payment_method: 'cash' | 'vnpay';
 
   declare total_cents: number;
   declare note: string | null;
-  declare promo_code_id: number | null;
   declare checked_in_at: Date | null;
   declare cancelled_at: Date | null;
   declare cancel_reason: string | null;
@@ -66,7 +64,6 @@ Booking.init(
     },
     total_cents: { type: DataTypes.INTEGER, defaultValue: 0 },
     note: { type: DataTypes.TEXT, allowNull: true },
-    promo_code_id: { type: DataTypes.INTEGER, allowNull: true },
     checked_in_at: { type: DataTypes.DATE, allowNull: true },
     cancelled_at: { type: DataTypes.DATE, allowNull: true },
     cancel_reason: { type: DataTypes.STRING(255), allowNull: true },

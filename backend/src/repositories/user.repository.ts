@@ -1,3 +1,4 @@
+import { Op } from 'sequelize';
 import models from '../models/index.js';
 import { BaseRepository } from './base.repository.js';
 
@@ -29,8 +30,26 @@ class UserRepository extends BaseRepository<any> {
         );
     }
 
-    async getAllUsers() {
+    async getAllUsers(search?: string) {
+        const where: any = {};
+
+        if (search) {
+            where[Op.or] = [
+                {
+                    full_name: {
+                        [Op.like]: `%${search}%`
+                    }
+                },
+                {
+                    email: {
+                        [Op.like]: `%${search}%`
+                    }
+                }
+            ];
+        }
+
         return this.findAll({
+            where,
             attributes: {
                 exclude: ['password_hash']
             },

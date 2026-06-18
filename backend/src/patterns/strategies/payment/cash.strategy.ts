@@ -6,18 +6,6 @@ export class CashStrategy implements PaymentStrategy{
         order:any,
         transaction:any
     ){
-
-        await paymentRepository.create(
-            {
-                order_id: order.id,
-                provider: 'cash',
-                status: 'paid',
-                amount_cents:
-                    order.total_cents
-            },
-            transaction
-        );
-
         return null;
     }
 }

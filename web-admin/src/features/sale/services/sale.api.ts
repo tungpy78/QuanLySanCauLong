@@ -1,10 +1,5 @@
 import axiosClient from "../../../config/axios";
-
-import type {
-  PosProduct,
-  Facility,
-  Order,
-} from "../types/sale.types";
+import type { PosProduct, Facility, Order } from "../types/sale.types";
 import type { ApiResponse } from "../../../types/api.type";
 
 export const PosService = {
@@ -77,7 +72,7 @@ export const PosService = {
 
   // Staff Xác nhận đã thu tiền mặt
   payCash: async (id: number) => {
-    return await axiosClient.patch<unknown, ApiResponse<unknown>>(`/admin/payment/${id}/pay-cash`);
+    return await axiosClient.patch<unknown, ApiResponse<unknown>>(`/admin/payments/${id}/pay-cash`);
   },
 
   // Staff Xác nhận đã giao hàng (Hoàn thành đơn)

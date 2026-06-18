@@ -43,7 +43,7 @@ const OrderManagementPage: React.FC = () => {
       message.success('Đã xác nhận thu tiền mặt!');
       fetchOrders(); // Load lại danh sách
     } catch (error) {
-        console.error(error);
+      console.error(error);
       message.error('Lỗi khi xác nhận thanh toán');
     }
   };
@@ -59,14 +59,14 @@ const OrderManagementPage: React.FC = () => {
     }
   };
 
-  
+
 
   // Cấu hình các cột của Bảng (Table)
   const columns = [
     { title: 'Mã ĐH', dataIndex: 'id', key: 'id', render: (id: number) => `#${id}` },
-    { 
-      title: 'Trạng thái', 
-      dataIndex: 'status', 
+    {
+      title: 'Trạng thái',
+      dataIndex: 'status',
       key: 'status',
       render: (status: string) => {
         const color = status === 'completed' ? 'green' : status === 'pending_payment' ? 'red' : 'blue';
@@ -74,11 +74,11 @@ const OrderManagementPage: React.FC = () => {
         return <Tag color={color}>{text}</Tag>;
       }
     },
-    { 
-      title: 'Tổng tiền', 
-      dataIndex: 'total_cents', 
+    {
+      title: 'Tổng tiền',
+      dataIndex: 'total_cents',
       key: 'total_cents',
-      render: (cents: number) => `${(cents).toLocaleString('vi-VN')} VNĐ` 
+      render: (cents: number) => `${(cents).toLocaleString('vi-VN')} VNĐ`
     },
     { title: 'Kiểu nhận', dataIndex: 'pickup_type', key: 'pickup_type' },
     {
@@ -86,8 +86,8 @@ const OrderManagementPage: React.FC = () => {
       key: 'action',
       render: (_: unknown, record: Order) => (
         <Space size="middle">
-          <Button type="link" onClick={() => {/* TODO: Mở Modal xem chi tiết getOrderById */}}>Xem chi tiết</Button>
-          
+          <Button type="link" onClick={() => {/* TODO: Mở Modal xem chi tiết getOrderById */ }}>Xem chi tiết</Button>
+
           {/* Nút hành động thay đổi linh hoạt theo trạng thái đơn */}
           {record.status === 'pending_payment' && (
             <Button type="primary" danger onClick={() => handlePayCash(record.id)}>
@@ -108,23 +108,23 @@ const OrderManagementPage: React.FC = () => {
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Xử lý Đơn hàng (App)</h1>
-      
-      <Tabs 
-        activeKey={activeTab} 
+
+      <Tabs
+        activeKey={activeTab}
         onChange={(key) => {
           setActiveTab(key); // THAY ĐỔI TAB (Lúc này useEffect sẽ tự chạy fetchOrders ở chế độ ẩn)
-        }}        
+        }}
         items={[
           { key: 'pending_pickup', label: 'Cần Giao / Chờ lấy hàng' },
-          { key: 'pending_payment', label: 'Chờ thanh toán (Tiền mặt)' },
+          // { key: 'pending_payment', label: 'Chờ thanh toán (Tiền mặt)' },
           { key: 'all', label: 'Tất cả đơn hàng (Lịch sử)' },
         ]}
       />
 
-      <Table 
-        columns={columns} 
-        dataSource={orders} 
-        rowKey="id" 
+      <Table
+        columns={columns}
+        dataSource={orders}
+        rowKey="id"
         loading={loading}
       />
     </div>

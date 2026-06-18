@@ -107,7 +107,6 @@ Hỗ trợ đặt nhiều slot (có thể khác sân nếu người dùng chấp
     { "court_id": 3, "start_at": "10:00", "end_at": "11:00" }
   ],
   "note": "Ghi chú nếu có",
-  "promo_code": "GIAM20"
 }
 ```
 

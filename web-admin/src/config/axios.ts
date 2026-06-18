@@ -24,7 +24,7 @@ axiosClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-let isRefreshing = false; 
+let isRefreshing = false;
 // Hàng đợi chứa các request bị kẹt lại chờ refresh xong
 let failedQueue: any[] = [];
 
@@ -43,7 +43,7 @@ const processQueue = (error: any, token: string | null = null) => {
 axiosClient.interceptors.response.use(
   (response) => {
     // Trả về data luôn, bỏ qua cái wrapper { status: 200, data: ... } của axios
-    return response.data; 
+    return response.data;
   },
   async (error) => {
     const originalRequest = error.config;
@@ -55,7 +55,7 @@ axiosClient.interceptors.response.use(
 
       // 1. Nếu đang có một tiến trình refresh chạy rồi, ta nhét các request khác vào hàng đợi
       if (isRefreshing) {
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
           failedQueue.push({ resolve, reject });
         }).then(token => {
           originalRequest.headers.Authorization = 'Bearer ' + token;
@@ -63,21 +63,21 @@ axiosClient.interceptors.response.use(
         }).catch(err => {
           return Promise.reject(err);
         });
-    }
+      }
 
-    // 2. Bắt đầu quá trình Refresh Token
-    isRefreshing = true;
-    try {
+      // 2. Bắt đầu quá trình Refresh Token
+      isRefreshing = true;
+      try {
         // 🔥 GỌI API (Không cần truyền refreshToken trong body vì nó đã nằm trong Cookie)
         const refreshResponse = await axios.post(
-            `${axiosClient.defaults.baseURL}/admin/auth/refresh-token`,
-            {}, 
-            { withCredentials: true } // Phải có cái này để gửi Cookie
+          `${axiosClient.defaults.baseURL}/admin/auth/refresh-token`,
+          {},
+          { withCredentials: true } // Phải có cái này để gửi Cookie
         );
 
         // Lấy Access Token mới từ Backend trả về
         // (Nhớ check xem Backend của em trả dạng refreshResponse.data.data.token hay gì nhé)
-        const newAccessToken = refreshResponse.data.data.token; 
+        const newAccessToken = refreshResponse.data.data.token;
 
         // Cập nhật lại LocalStorage
         localStorage.setItem('accessToken', newAccessToken);
@@ -91,19 +91,19 @@ axiosClient.interceptors.response.use(
 
         // Gọi lại cái request bị xịt lúc nãy
         return axiosClient(originalRequest);
-        
+
       } catch (refreshError) {
         // Nếu API refresh-token cũng xịt (Token bị ban, hết hạn 7 ngày...)
         processQueue(refreshError, null);
-        
+
         // ĐÁ VĂNG USER RA KHỎI APP
         localStorage.removeItem('accessToken');
         localStorage.removeItem('user');
-        
+
         if (window.location.pathname !== '/login') {
           window.location.href = '/login';
         }
-        
+
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

@@ -13,6 +13,13 @@ class VariantRepository
             where: {
                 product_id: productId
             },
+            include: [
+                {
+                    model: models.InventoryLevel,
+                    as: 'inventory_levels',
+                    required: false
+                }
+            ],
             order: [
                 ['created_at', 'ASC']
             ]

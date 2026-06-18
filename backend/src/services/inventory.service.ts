@@ -1,7 +1,7 @@
 import sequelize from '../config/database.js';
 import ApiError from '../utils/ErrorClass.js';
-import {inventoryRepository} from '../repositories/inventory.repository.js';
-import {inventoryMovementRepository} from '../repositories/inventory-movement.repository.js';
+import { inventoryRepository } from '../repositories/inventory.repository.js';
+import { inventoryMovementRepository } from '../repositories/inventory-movement.repository.js';
 
 export class InventoryService {
     static async adjustInventory(data: {
@@ -20,12 +20,12 @@ export class InventoryService {
         try {
             const [inventory] = await inventoryRepository.findOrCreateInventory(data.variant_id, data.facility_id, transaction);
             const newQuantity = inventory.quantity_on_hand + data.qty_delta;
-            
+
             if (newQuantity < 0) {
                 throw new ApiError('Số lượng tồn kho không đủ', 400);
             }
 
-            await inventory.update({quantity_on_hand: newQuantity}, { transaction });
+            await inventory.update({ quantity_on_hand: newQuantity }, { transaction });
             await inventoryMovementRepository.createMovement(
                 {
                     variant_id: data.variant_id,
@@ -93,26 +93,25 @@ export class InventoryService {
         }
     }
 
-    /**
-     * 2. Lấy lịch sử biến động (Logs)
-     */
-    // Mở file: src/services/inventory.service.ts
     static async getMovements(filters: any) {
         return inventoryMovementRepository.getMovements(filters, filters.limit || 20, filters.offset || 0);
     }
 
-    /**
-     * 3. Cảnh báo tồn kho thấp
-     */
     static async getLowStock(threshold: number = 5) {
         return inventoryRepository.getLowStock(threshold);
     }
 
-    /**
-     * 4. Kiểm kê (Đồng bộ số lượng thực tế)
-     */
     static async checkStock(variant_id: number, facility_id: number, quantity: number) {
         const inventory = await inventoryRepository.checkStock(variant_id, facility_id);
         return (inventory && inventory.quantity_on_hand >= quantity);
     }
+
+    static async getVariantLevel(facilityId: number, variantId: number) {
+        const result = await inventoryRepository.getVariantLevel(facilityId, variantId);
+        if (!result) {
+            throw new ApiError('Không tìm thấy thông tin tồn kho cho biến thể này tại cơ sở được chọn', 404);
+        }
+        return result;
+    }
+
 }

@@ -22,11 +22,10 @@ export const useStaffForm = ({ open, onSuccess, onClose, initialData }: UseStaff
       if (initialData) {
         // Form Edit
         form.setFieldsValue({
-          first_name: initialData.first_name,
-          last_name: initialData.last_name,
+          first_name: initialData.full_name.split(' ')[1],
+          last_name: initialData.full_name.split(' ')[0],
           email: initialData.email,
           phone: initialData.phone,
-          role_id: initialData.role_id,
           // Không set password khi edit trừ khi backend yêu cầu
         });
       } else {
@@ -39,14 +38,19 @@ export const useStaffForm = ({ open, onSuccess, onClose, initialData }: UseStaff
   const handleSubmit = async (values: CreateStaffPayload) => {
     try {
       setLoading(true);
-      
+
       if (initialData) {
         // LÔJIC EDIT (Nếu bạn có API edit, thay vào đây)
         // await StaffService.updateStaff(initialData.id, values);
         message.success('Cập nhật nhân viên thành công!');
       } else {
         // LÔJIC ADD NEW
-        await StaffService.createStaff(values);
+        const { last_name, first_name, ...rest } = values;
+        const payload = {
+          ...rest,
+          full_name: `${last_name} ${first_name}`.trim(),
+        };
+        await StaffService.createStaff(payload as any);
         message.success('Tạo nhân viên thành công!');
       }
 

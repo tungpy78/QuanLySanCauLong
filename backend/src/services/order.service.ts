@@ -1,11 +1,9 @@
 import models from '../models/index.js';
 import ApiError from '../utils/ErrorClass.js';
 import sequelize from '../config/database.js';
-
 import { orderRepository } from '../repositories/order.repository.js';
 import { paymentRepository } from '../repositories/payment.repository.js';
 import { orderItemRepository } from '../repositories/order-item.repository.js';
-
 import { PaymentFactory } from '../patterns/factories/payment.factory.js';
 
 export class OrderService {
@@ -35,18 +33,33 @@ export class OrderService {
             await sequelize.transaction();
 
         try {
+            // Lấy danh sách variant_id từ items để truy vấn DB
+            const variantIds = items.map((item: any) => item.variant_id || item.product_variant_id);
+            const variants = await models.ProductVariant.findAll({
+                where: {
+                    id: variantIds
+                },
+                transaction: t
+            });
 
-            const subtotalCents =
-                items.reduce(
-                    (sum: number, item: any) =>
-                        sum +
-                        item.price_cents *
-                            item.quantity,
-                    0
-                );
+            const variantMap = new Map<number, any>(
+                variants.map((v: any) => [v.id, v])
+            );
 
-            const totalCents =
-                subtotalCents;
+            let subtotalCents = 0;
+            for (const item of items) {
+                const variantId = item.variant_id || item.product_variant_id;
+                const variant = variantMap.get(variantId);
+                if (!variant) {
+                    throw new ApiError(
+                        `Không tìm thấy biến thể sản phẩm có ID ${variantId}`,
+                        400
+                    );
+                }
+                subtotalCents += variant.price_cents * item.quantity;
+            }
+
+            const totalCents = subtotalCents;
 
             let targetFacilityId =
                 facility_id;
@@ -88,17 +101,13 @@ export class OrderService {
                             totalCents,
 
                         note:
-                            `Khách: ${
-                                customer_name ||
-                                'N/A'
-                            } - ${
-                                customer_phone ||
-                                'N/A'
-                            }. Đ/c: ${
-                                shipping_address ||
-                                'N/A'
-                            }. ${
-                                note || ''
+                            `Khách: ${customer_name ||
+                            'N/A'
+                            } - ${customer_phone ||
+                            'N/A'
+                            }. Đ/c: ${shipping_address ||
+                            'N/A'
+                            }. ${note || ''
                             }`
                     },
                     t
@@ -106,22 +115,26 @@ export class OrderService {
 
             const orderItems =
                 items.map(
-                    (item: any) => ({
-                        order_id:
-                            order.id,
+                    (item: any) => {
+                        const variantId = item.variant_id || item.product_variant_id;
+                        const variant = variantMap.get(variantId);
+                        return {
+                            order_id:
+                                order.id,
 
-                        variant_id:
-                            item.product_variant_id,
+                            variant_id:
+                                variantId,
 
-                        quantity:
-                            item.quantity,
+                            quantity:
+                                item.quantity,
 
-                        unit_price_cents:
-                            item.price_cents,
+                            unit_price_cents:
+                                variant.price_cents,
 
-                        discount_cents:
-                            0
-                    })
+                            discount_cents:
+                                0
+                        };
+                    }
                 );
 
             await orderItemRepository
@@ -191,9 +204,9 @@ export class OrderService {
                     id: orderId,
                     ...(userId
                         ? {
-                              user_id:
-                                  userId
-                          }
+                            user_id:
+                                userId
+                        }
                         : {})
                 }
             });

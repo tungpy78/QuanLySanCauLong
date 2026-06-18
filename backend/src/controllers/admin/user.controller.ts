@@ -18,7 +18,8 @@ export class UserController {
 
     static async getAll(req: Request, res: Response, next: NextFunction){
         try{
-            const result = await UserService.getAllUsers();
+            const { search } = req.query;
+            const result = await UserService.getAllUsers(search as string);
             return AppResponse.success(res, result, 'Lấy danh sách người dùng thành công', 200);
         } catch(error){
             next(error);

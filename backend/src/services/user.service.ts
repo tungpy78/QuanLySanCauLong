@@ -148,8 +148,8 @@ export class UserService {
         }
     }
 
-    static async getAllUsers() {
-        return userRepository.getAllUsers();
+    static async getAllUsers(search?: string) {
+        return userRepository.getAllUsers(search);
     }
 
     static async toggleUserStatus(

@@ -34,12 +34,7 @@ export class InventoryController {
     // 3. Kiểm kê (Đồng bộ số lượng thực tế)
     static async sync(req: Request, res: Response, next: NextFunction) {
         try {
-            const result =
-    await InventoryService.checkStock(
-        req.body.variant_id,
-        req.body.facility_id,
-        req.body.actual_quantity
-    );
+            const result = await InventoryService.checkStock(req.body.variant_id, req.body.facility_id, req.body.actual_quantity);
             return AppResponse.success(res, result, 'Đồng bộ thực tế thành công');
         } catch (error) { next(error); }
     }
@@ -49,11 +44,11 @@ export class InventoryController {
         try {
             const { page = 1, limit = 20, ...filters } = req.query;
             const offset = (Number(page) - 1) * Number(limit);
-            
-            const result = await InventoryService.getMovements({ 
-                ...filters, 
-                limit, 
-                offset 
+
+            const result = await InventoryService.getMovements({
+                ...filters,
+                limit,
+                offset
             });
             return AppResponse.success(res, result, 'Lấy lịch sử thành công');
         } catch (error) { next(error); }
@@ -67,4 +62,17 @@ export class InventoryController {
             return AppResponse.success(res, result, 'Danh sách hàng tồn kho thấp');
         } catch (error) { next(error); }
     }
+
+    // Lấy tồn kho của 1 biến thể tại 1 cơ sở
+    static async getVariantStock(req: Request, res: Response, next: NextFunction) {
+        try {
+            const facilityId = Number(req.params.facilityId);
+            const variantId = Number(req.params.variantId);
+            const result = await InventoryService.getVariantLevel(facilityId, variantId);
+            return AppResponse.success(res, result, 'Lấy chi tiết tồn kho biến thể thành công');
+        } catch (error) {
+            next(error);
+        }
+    }
+
 }

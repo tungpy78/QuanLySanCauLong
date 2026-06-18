@@ -104,8 +104,7 @@ const CartSidebar = () => {
       /**
        * VNPAY
        */
-      const url =
-        res.data.payment_url;
+      const url = res.data.paymentResult;
 
       if (!url) {
         message.error(
@@ -274,7 +273,7 @@ const CartSidebar = () => {
                   updateQuantity(
                     item.variantId,
                     item.quantity -
-                      1
+                    1
                   );
                 }}
               >
@@ -307,7 +306,7 @@ const CartSidebar = () => {
                   updateQuantity(
                     item.variantId,
                     item.quantity +
-                      1
+                    1
                   );
                 }}
               >
