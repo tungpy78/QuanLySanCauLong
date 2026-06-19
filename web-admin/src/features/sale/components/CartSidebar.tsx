@@ -98,6 +98,10 @@ const CartSidebar = () => {
           "Đã thanh toán tiền mặt thành công"
         );
 
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+
         return;
       }
 
@@ -187,6 +191,10 @@ const CartSidebar = () => {
               clearInterval(
                 interval
               );
+
+              setTimeout(() => {
+                window.location.reload();
+              }, 1500);
             }
           } catch (error) {
             console.error(

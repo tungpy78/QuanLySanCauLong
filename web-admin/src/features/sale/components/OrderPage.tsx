@@ -87,7 +87,6 @@ const OrderManagementPage: React.FC = () => {
       render: (_: unknown, record: Order) => (
         <Space size="middle">
 
-
           {/* Nút hành động thay đổi linh hoạt theo trạng thái đơn */}
           {record.status === 'pending_payment' && (
             <Button type="primary" danger onClick={() => handlePayCash(record.id)}>
