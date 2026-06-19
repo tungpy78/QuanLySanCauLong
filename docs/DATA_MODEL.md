@@ -1,3 +1,20 @@
+# [OUTDATED] Mô hình dữ liệu (ER, Bảng, Index, Phân quyền)
+
+> ⚠️ **FILE NÀY ĐÃ OUTDATED** — Cập nhật lần cuối theo code thật: 2026-06-19 (T-REV-0)  
+> Thay thế bởi: [04-database.md](./04-database.md)  
+>  
+> Các lỗi trong file này:
+> - Court: ghi `court_type_id int` → **Sai** (thực tế dùng `court_type ENUM` trực tiếp)
+> - Booking status: có `checked_in` → **Không tồn tại** trong code thật
+> - Order status: `pending|confirmed|completed|cancelled` → **Sai** (thực tế: `pending_payment|pending_pickup|...`)
+> - Thiếu bảng: `holidays`, `system_configs`, `audit_logs`
+> - Thiếu cột: `booking.payment_method`, `order.pickup_type`, `user.membership_type`
+> - Có `cart_items`, `notifications` → **Không tồn tại** trong code hiện tại
+>  
+> **Đọc [04-database.md](./04-database.md) thay thế.**
+
+---
+
 # Mô hình dữ liệu (ER, Bảng, Index, Phân quyền) - Bản Final
 
 ## 1. Sơ đồ ER (Mermaid)

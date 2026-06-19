@@ -1,3 +1,17 @@
+# [OUTDATED PARTIAL] Bắt đầu — cài đặt và chạy dự án
+
+> ⚠️ **FILE NÀY CẦN CẬP NHẬT** — Còn một số thông tin sai so với code thật (2026-06-19, T-REV-0):  
+> - Ghi ORM: `Drizzle / Knex / TypeORM (chọn 1)` → **Sai** (chỉ dùng Sequelize)  
+> - Ghi App: `React Native (Expo hoặc CLI)` → **Không có trong scope hiện tại**  
+> - Ghi `EXPO_PUBLIC_API_BASE_URL` → **Không dùng**  
+> - Biến env: `MYSQL_URL`, `REDIS_URL` → **Sai** (thực tế dùng `DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, REDIS_URL`)  
+> - Script `pnpm --filter backend migrate` → **Không tồn tại** (dùng `SYNC_DB=true` thay migration)  
+>  
+> Phần còn đúng: Node.js 20+, Docker cho MySQL+Redis, pnpm, các lệnh dev cơ bản.  
+> Cập nhật đầy đủ sẽ được thực hiện trong backlog.
+
+---
+
 # Bắt đầu — cài đặt và chạy dự án
 
 ## 1. Stack công nghệ (đề xuất)

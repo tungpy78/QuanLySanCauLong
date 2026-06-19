@@ -1,0 +1,263 @@
+// 04 - Database Schema (DBML)
+// Cập nhật: 2026-06-19 — Đồng bộ theo code thật (T-REV-0)
+// Source of truth: backend/src/models/
+// Xem tại: https://dbdiagram.io
+// ⚠️ File DATABASE_SCHEMA.dbml cũ đã outdated — thay thế bởi file này.
+
+// ============================================================
+// 1. NGƯỜI DÙNG & NHÂN VIÊN
+// ============================================================
+
+Table users {
+  id int [pk, increment]
+  full_name varchar(100) [null]
+  email varchar(100) [unique, not null]
+  phone varchar(20) [null]
+  password_hash varchar(255) [not null]
+  avatar_url varchar(255) [null]
+  role varchar [note: 'enum: admin | staff | customer']
+  membership_type varchar [note: 'enum: standard | student | vip — tồn tại nhưng chưa dùng trong business flow']
+  loyalty_points int [default: 0, note: 'tồn tại nhưng chưa dùng trong business flow']
+  is_active boolean [default: true]
+  created_at datetime [default: `now()`]
+  updated_at datetime
+  deleted_at datetime [null, note: 'soft delete']
+}
+
+Table staff_profiles {
+  id int [pk, increment]
+  user_id int [ref: > users.id]
+  facility_id int [ref: > facilities.id]
+  job_title varchar [null]
+  is_active boolean [default: true]
+  created_at datetime
+  updated_at datetime
+}
+
+Table refresh_tokens {
+  id int [pk, increment]
+  user_id int [ref: > users.id]
+  token_hash varchar [note: 'hash của refresh token']
+  expires_at datetime
+  revoked boolean [default: false]
+  created_at datetime
+}
+
+// ============================================================
+// 2. CƠ SỞ & SÂN
+// ============================================================
+
+Table facilities {
+  id int [pk, increment]
+  name varchar(150) [not null]
+  address varchar(255) [not null]
+  timezone varchar(50) [default: 'Asia/Ho_Chi_Minh']
+  open_time time [default: '06:00:00']
+  close_time time [default: '22:00:00']
+  avatar_url text [null]
+  cancel_policy json [null]
+  is_active boolean [default: true]
+  created_at datetime
+  updated_at datetime
+  deleted_at datetime [null, note: 'soft delete — cascade xóa courts, price_configs, inventory_levels']
+}
+
+Table courts {
+  id int [pk, increment]
+  facility_id int [ref: > facilities.id]
+  name varchar(100) [not null]
+  court_type varchar [note: 'enum: badminton | tennis | football | table_tennis — KHÔNG dùng court_type_id FK']
+  is_active boolean [default: true]
+  created_at datetime
+  updated_at datetime
+  deleted_at datetime [null, note: 'soft delete']
+}
+
+Table court_types {
+  id int [pk, increment]
+  // Bảng này tồn tại nhưng KHÔNG được dùng làm FK trong courts
+  // Đây là bảng reference/legacy — chưa tích hợp trong relation
+  note: 'reference/legacy — court dùng court_type enum trực tiếp'
+}
+
+// ============================================================
+// 3. GIÁ THEO KHUNG GIỜ
+// ============================================================
+
+Table price_configs {
+  id int [pk, increment]
+  facility_id int [ref: > facilities.id]
+  court_type varchar [note: 'badminton | tennis | football | table_tennis']
+  start_time time [not null]
+  end_time time [not null]
+  price_per_hour int [not null, note: 'đơn vị VNĐ — 1 unit = 1 VNĐ']
+  created_at datetime
+  updated_at datetime
+  deleted_at datetime [null, note: 'soft delete']
+}
+
+// ============================================================
+// 4. ĐẶT SÂN
+// ============================================================
+
+Table bookings {
+  id int [pk, increment]
+  user_id int [ref: > users.id, null, note: 'null = walk-in khách không có tài khoản']
+  facility_id int [ref: > facilities.id]
+  status varchar [note: 'enum: pending | confirmed | cancelled | completed | no_show']
+  payment_status varchar [note: 'enum: unpaid | partial | paid | refunded']
+  payment_method varchar [note: 'enum: cash | vnpay']
+  total_cents int [default: 0, note: 'tổng tiền VNĐ — 1 unit = 1 VNĐ']
+  note text [null]
+  checked_in_at datetime [null]
+  cancelled_at datetime [null]
+  cancel_reason varchar(255) [null]
+  created_at datetime
+  updated_at datetime
+  deleted_at datetime [null, note: 'soft delete']
+}
+
+Table booking_slots {
+  id int [pk, increment]
+  booking_id int [ref: > bookings.id]
+  court_id int [ref: > courts.id]
+  start_at datetime [not null]
+  end_at datetime [not null]
+  price_cents int [not null, note: 'snapshot giá lúc đặt — VNĐ']
+  created_at datetime
+  updated_at datetime
+  // Không có soft delete
+}
+
+// ============================================================
+// 5. SẢN PHẨM & ĐƠN HÀNG
+// ============================================================
+
+Table products {
+  id int [pk, increment]
+  name varchar [not null]
+  slug varchar [unique, not null]
+  category varchar [note: 'racket | shuttlecock | shoes | apparel | accessory']
+  description text [null]
+  thumbnail_url text [null]
+  rating decimal [null]
+  review_count int [null]
+  is_active boolean [default: true]
+  created_at datetime
+  updated_at datetime
+  deleted_at datetime [null, note: 'soft delete']
+}
+
+Table product_variants {
+  id int [pk, increment]
+  product_id int [ref: > products.id]
+  sku varchar [unique]
+  attributes json [note: 'e.g. {"size": "3U", "color": "Red"}']
+  price_cents int [note: 'đơn vị VNĐ']
+  barcode varchar [null]
+  is_active boolean [default: true]
+  created_at datetime
+  updated_at datetime
+  deleted_at datetime [null, note: 'soft delete']
+}
+
+Table orders {
+  id int [pk, increment]
+  user_id int [ref: > users.id, null]
+  facility_id int [ref: > facilities.id]
+  status varchar [note: 'enum: pending_payment | pending_pickup | completed | cancelled | refunded | expired']
+  total_cents int [default: 0, note: 'tổng tiền VNĐ']
+  note text [null]
+  pickup_type varchar [note: 'enum: immediate | pickup_store']
+  pickup_time datetime [null]
+  reservation_expires_at datetime [null]
+  created_at datetime
+  updated_at datetime
+  deleted_at datetime [null, note: 'soft delete']
+}
+
+Table order_items {
+  id int [pk, increment]
+  order_id int [ref: > orders.id]
+  variant_id int [ref: > product_variants.id]
+  quantity int
+  unit_price_cents int [note: 'snapshot giá lúc mua — VNĐ']
+}
+
+// ============================================================
+// 6. THANH TOÁN
+// ============================================================
+
+Table payments {
+  id int [pk, increment]
+  provider varchar [note: 'enum: cash | vnpay']
+  status varchar [note: 'enum: pending | paid | failed | refunded']
+  amount_cents int [not null, note: 'số tiền VNĐ — 1 unit = 1 VNĐ']
+  booking_id int [ref: - bookings.id, null, note: 'payment cho booking']
+  order_id int [ref: - orders.id, null, note: 'payment cho order — KHÔNG thể vừa có booking_id vừa có order_id']
+  provider_ref varchar(255) [null, note: 'VNPay transaction ref']
+  metadata json [null]
+  paid_at datetime [null]
+  created_at datetime
+  updated_at datetime
+}
+
+// ============================================================
+// 7. TỒN KHO
+// ============================================================
+
+Table inventory_levels {
+  id int [pk, increment]
+  variant_id int [ref: > product_variants.id]
+  facility_id int [ref: > facilities.id]
+  quantity_on_hand int
+  // UNIQUE constraint: (variant_id, facility_id)
+}
+
+Table inventory_movements {
+  id int [pk, increment]
+  variant_id int [ref: > product_variants.id]
+  facility_id int [ref: > facilities.id, null]
+  qty_delta int [note: 'âm = xuất kho, dương = nhập kho']
+  reason varchar [note: 'sale | return | adjustment | import | transfer_in | transfer_out | sync']
+  ref_order_id int [null]
+  note text [null]
+  created_at datetime
+  updated_at datetime
+}
+
+// ============================================================
+// 8. HỆ THỐNG
+// ============================================================
+
+Table holidays {
+  id int [pk, increment]
+  name varchar(255) [not null]
+  holiday_date date [unique, note: 'DATEONLY YYYY-MM-DD']
+  surcharge_percent int [default: 0, note: 'phụ thu % so với giá gốc (VD: 50 = +50%)']
+  created_at datetime
+  updated_at datetime
+  deleted_at datetime [null, note: 'soft delete']
+}
+
+Table system_configs {
+  id int [pk, increment]
+  key varchar(100) [unique, not null]
+  value varchar(255) [not null, note: 'luôn lưu dạng string dù là số hay boolean']
+  description text [null]
+  data_type varchar [note: 'enum: number | string | boolean']
+  created_at datetime
+  updated_at datetime
+  deleted_at datetime [null, note: 'soft delete']
+}
+
+Table audit_logs {
+  id int [pk, increment]
+  actor_user_id int [null]
+  action varchar
+  entity_type varchar
+  entity_id int
+  payload json [null]
+  ip_address varchar [null]
+  created_at datetime
+}
