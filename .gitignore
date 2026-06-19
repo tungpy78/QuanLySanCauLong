@@ -1,0 +1,13 @@
+backend/dist/
+backend/build/
+backend/*.tsbuildinfo
+backend/src/**/*.js
+backend/src/**/*.js.map
+backend/src/**/*.d.ts
+backend/src/**/*.d.ts.map
+
+web-admin/dist/
+web-admin/dist-ssr/
+web-admin/build/
+web-admin/.vite/
+web-admin/*.tsbuildinfo

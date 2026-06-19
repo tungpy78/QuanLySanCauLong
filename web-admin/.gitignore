@@ -1,24 +1,62 @@
+# Dependencies
+
+node_modules/
+
+# Environment variables
+
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+!.env.example
+
+# Build output
+
+dist/
+dist-ssr/
+build/
+
+# Vite cache
+
+.vite/
+
+# TypeScript incremental cache
+
+*.tsbuildinfo
+
 # Logs
-logs
+
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# Test coverage
 
-# Editor directories and files
+coverage/
+.nyc_output/
+
+# OS files
+
+.DS_Store
+Thumbs.db
+
+# Editor files
+
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# Local/temp notes
+
+implementation_plan.md
+walkthrough.md
+task.md
