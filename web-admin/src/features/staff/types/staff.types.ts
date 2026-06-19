@@ -18,3 +18,10 @@ export interface CreateStaffPayload {
   password: string;
   role: UserRole;
 }
+
+export interface GetStaffsParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  role?: UserRole;
+}
