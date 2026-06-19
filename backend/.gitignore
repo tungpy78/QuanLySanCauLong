@@ -26,6 +26,8 @@ src/**/*.js
 src/**/*.js.map
 src/**/*.d.ts
 src/**/*.d.ts.map
+!src/types/**/*.d.ts
+!src/@types/**/*.d.ts
 
 # Logs
 
