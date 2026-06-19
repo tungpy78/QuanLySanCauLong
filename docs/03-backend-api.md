@@ -349,10 +349,57 @@
 
 ## 14. Revenue — `/api/v1/admin/revenue`
 
-> ❌ **CHƯA TỒN TẠI** — Sẽ được implement ở T-REV-2.
+> **Trạng thái:** ✅ **Đã triển khai**  
+> Source of truth: `backend/src/routes/admin/revenue.route.ts`
 
-Các API dự kiến (xem [08-revenue-module-plan.md](./08-revenue-module-plan.md)):
-- `GET /api/v1/admin/revenue/summary`
-- `GET /api/v1/admin/revenue/chart`
-- `GET /api/v1/admin/revenue/breakdown`
-- `GET /api/v1/admin/revenue/transactions`
+### Quy Tắc Chung:
+- **Phân quyền:** Chỉ `admin` được phép gọi các API này. `staff` gọi sẽ bị chặn với mã lỗi `403 Forbidden`. Không có token hợp lệ trả về `401 Unauthorized`.
+- **Tính doanh thu:** Doanh thu được lấy từ các bản ghi trong bảng `payments` có `status = 'paid'`.
+- **Thời gian ghi nhận:** Sử dụng trường `paid_at` để xác định ngày/tháng của doanh thu. Nếu `paid_at` bị `null`, hệ thống fallback sử dụng `created_at`.
+- **Đơn vị tiền tệ:** Trường `amount_cents` là integer VNĐ (VD: `80000` = 80.000 VNĐ), không chia 100 khi hiển thị.
+- **Lọc theo cơ sở (`facility_id`):** Tham số `facility_id` là optional. Nếu không truyền, hệ thống sẽ trả về số liệu của toàn hệ thống (tất cả các cơ sở). Nếu truyền vào, hệ thống chỉ tính doanh thu cho cơ sở tương ứng.
+
+### Các Endpoints:
+
+| Method | Path | Roles | Mô tả |
+|--------|------|-------|-------|
+| GET | `/summary` | admin | Lấy tổng quan doanh thu, số lượng booking và order, doanh thu theo phương thức thanh toán |
+| GET | `/chart` | admin | Dữ liệu vẽ biểu đồ doanh thu theo ngày/tháng (`group_by=day` hoặc `group_by=month`) |
+| GET | `/breakdown` | admin | Phân tích tỉ lệ doanh thu theo nguồn (booking/order), phương thức thanh toán, cơ sở |
+| GET | `/transactions` | admin | Danh sách giao dịch doanh thu (phân trang, filter theo nguồn, phương thức thanh toán...) |
+
+#### Chi Tiết API:
+
+1. **GET `/api/v1/admin/revenue/summary`**
+   - Query params:
+     - `from` (string, YYYY-MM-DD): Ngày bắt đầu (optional)
+     - `to` (string, YYYY-MM-DD): Ngày kết thúc (optional)
+     - `facility_id` (number): ID cơ sở (optional)
+   - Response: 200 OK, 400 Bad Request (nếu định dạng ngày sai), 404 Not Found (nếu facility_id không tồn tại).
+
+2. **GET `/api/v1/admin/revenue/chart`**
+   - Query params:
+     - `from` (string, YYYY-MM-DD): Ngày bắt đầu (optional)
+     - `to` (string, YYYY-MM-DD): Ngày kết thúc (optional)
+     - `group_by` (string): `day` hoặc `month` (default: `day`)
+     - `facility_id` (number): ID cơ sở (optional)
+   - Response: 200 OK.
+
+3. **GET `/api/v1/admin/revenue/breakdown`**
+   - Query params:
+     - `from` (string, YYYY-MM-DD): Ngày bắt đầu (optional)
+     - `to` (string, YYYY-MM-DD): Ngày kết thúc (optional)
+     - `facility_id` (number): ID cơ sở (optional)
+   - Response: 200 OK.
+
+4. **GET `/api/v1/admin/revenue/transactions`**
+   - Query params:
+     - `from` (string, YYYY-MM-DD): Ngày bắt đầu (optional)
+     - `to` (string, YYYY-MM-DD): Ngày kết thúc (optional)
+     - `facility_id` (number): ID cơ sở (optional)
+     - `source` (string): `booking` hoặc `order` (optional)
+     - `provider` (string): `cash` hoặc `vnpay` (optional)
+     - `page` (number): Số trang (default: 1)
+     - `limit` (number): Số phần tử trên trang (default: 10)
+   - Response: 200 OK.
+
