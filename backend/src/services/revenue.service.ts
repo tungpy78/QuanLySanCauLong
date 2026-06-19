@@ -46,11 +46,15 @@ export class RevenueService {
     const { fromStr, toStr, fromDate, toDate, scope, facilityId, facilityName } = 
       await this.resolveFilters(filters.from, filters.to, filters.facility_id);
 
-    const payments = await revenueRepository.getPaymentsForRevenue({
+    const repoParams: { from: Date; to: Date; facilityId?: number } = {
       from: fromDate,
-      to: toDate,
-      facilityId: facilityId || undefined
-    });
+      to: toDate
+    };
+    if (facilityId !== null && facilityId !== undefined) {
+      repoParams.facilityId = facilityId;
+    }
+
+    const payments = await revenueRepository.getPaymentsForRevenue(repoParams);
 
     let totalRevenue = 0;
     let bookingRevenue = 0;
@@ -107,11 +111,15 @@ export class RevenueService {
     const { fromStr, toStr, fromDate, toDate, facilityId } = 
       await this.resolveFilters(filters.from, filters.to, filters.facility_id);
 
-    const payments = await revenueRepository.getPaymentsForRevenue({
+    const repoParams: { from: Date; to: Date; facilityId?: number } = {
       from: fromDate,
-      to: toDate,
-      facilityId: facilityId || undefined
-    });
+      to: toDate
+    };
+    if (facilityId !== null && facilityId !== undefined) {
+      repoParams.facilityId = facilityId;
+    }
+
+    const payments = await revenueRepository.getPaymentsForRevenue(repoParams);
 
     const chartMap = new Map<string, { label: string; date: string; bookingRevenue: number; orderRevenue: number; totalRevenue: number }>();
 
@@ -176,11 +184,15 @@ export class RevenueService {
     const { fromDate, toDate, facilityId } = 
       await this.resolveFilters(filters.from, filters.to, filters.facility_id);
 
-    const payments = await revenueRepository.getPaymentsForRevenue({
+    const repoParams: { from: Date; to: Date; facilityId?: number } = {
       from: fromDate,
-      to: toDate,
-      facilityId: facilityId || undefined
-    });
+      to: toDate
+    };
+    if (facilityId !== null && facilityId !== undefined) {
+      repoParams.facilityId = facilityId;
+    }
+
+    const payments = await revenueRepository.getPaymentsForRevenue(repoParams);
 
     let booking = 0;
     let order = 0;
@@ -233,17 +245,31 @@ export class RevenueService {
 
     const offset = (filters.page - 1) * filters.limit;
 
-    const { count, rows } = await revenueRepository.getTransactions({
+    const repoParams: {
+      from: Date;
+      to: Date;
+      facilityId?: number;
+      source: 'booking' | 'order' | 'all';
+      provider: 'cash' | 'vnpay' | 'all';
+      limit: number;
+      offset: number;
+      sortBy: 'paidAt' | 'amount';
+      sortOrder: 'asc' | 'desc';
+    } = {
       from: fromDate,
       to: toDate,
-      facilityId: facilityId || undefined,
       source: filters.source,
       provider: filters.provider,
       limit: filters.limit,
       offset,
       sortBy: filters.sortBy,
       sortOrder: filters.sortOrder
-    });
+    };
+    if (facilityId !== null && facilityId !== undefined) {
+      repoParams.facilityId = facilityId;
+    }
+
+    const { count, rows } = await revenueRepository.getTransactions(repoParams);
 
     const transactions = rows.map((p: any) => {
       const source = p.booking_id ? 'booking' : (p.order_id ? 'order' : 'unknown');

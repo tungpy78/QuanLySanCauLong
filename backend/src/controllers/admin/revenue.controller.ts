@@ -8,12 +8,17 @@ export class RevenueController {
    */
   static async getSummary(req: Request, res: Response, next: NextFunction) {
     try {
-      const filters = req.query as any;
-      const result = await RevenueService.getSummary({
-        from: filters.from,
-        to: filters.to,
-        facility_id: filters.facility_id ? Number(filters.facility_id) : undefined
-      });
+      const query = req.query;
+      const from = typeof query.from === 'string' ? query.from : undefined;
+      const to = typeof query.to === 'string' ? query.to : undefined;
+      const facility_id = typeof query.facility_id === 'string' ? Number(query.facility_id) : undefined;
+
+      const serviceParams: { from?: string; to?: string; facility_id?: number } = {};
+      if (from !== undefined) serviceParams.from = from;
+      if (to !== undefined) serviceParams.to = to;
+      if (facility_id !== undefined && !isNaN(facility_id)) serviceParams.facility_id = facility_id;
+
+      const result = await RevenueService.getSummary(serviceParams);
       return AppResponse.success(res, result, 'Lấy thông tin tổng quan doanh thu thành công', 200);
     } catch (error) {
       next(error);
@@ -25,13 +30,26 @@ export class RevenueController {
    */
   static async getChart(req: Request, res: Response, next: NextFunction) {
     try {
-      const filters = req.query as any;
-      const result = await RevenueService.getChart({
-        from: filters.from,
-        to: filters.to,
-        facility_id: filters.facility_id ? Number(filters.facility_id) : undefined,
-        group_by: filters.group_by || 'day'
-      });
+      const query = req.query;
+      const from = typeof query.from === 'string' ? query.from : undefined;
+      const to = typeof query.to === 'string' ? query.to : undefined;
+      const facility_id = typeof query.facility_id === 'string' ? Number(query.facility_id) : undefined;
+      const group_by = typeof query.group_by === 'string' ? (query.group_by as 'day' | 'month') : undefined;
+
+      const serviceParams: {
+        from?: string;
+        to?: string;
+        facility_id?: number;
+        group_by: 'day' | 'month';
+      } = {
+        group_by: group_by ?? 'day',
+      };
+
+      if (from !== undefined) serviceParams.from = from;
+      if (to !== undefined) serviceParams.to = to;
+      if (facility_id !== undefined && !isNaN(facility_id)) serviceParams.facility_id = facility_id;
+
+      const result = await RevenueService.getChart(serviceParams);
       return AppResponse.success(res, result, 'Lấy dữ liệu biểu đồ doanh thu thành công', 200);
     } catch (error) {
       next(error);
@@ -43,12 +61,17 @@ export class RevenueController {
    */
   static async getBreakdown(req: Request, res: Response, next: NextFunction) {
     try {
-      const filters = req.query as any;
-      const result = await RevenueService.getBreakdown({
-        from: filters.from,
-        to: filters.to,
-        facility_id: filters.facility_id ? Number(filters.facility_id) : undefined
-      });
+      const query = req.query;
+      const from = typeof query.from === 'string' ? query.from : undefined;
+      const to = typeof query.to === 'string' ? query.to : undefined;
+      const facility_id = typeof query.facility_id === 'string' ? Number(query.facility_id) : undefined;
+
+      const serviceParams: { from?: string; to?: string; facility_id?: number } = {};
+      if (from !== undefined) serviceParams.from = from;
+      if (to !== undefined) serviceParams.to = to;
+      if (facility_id !== undefined && !isNaN(facility_id)) serviceParams.facility_id = facility_id;
+
+      const result = await RevenueService.getBreakdown(serviceParams);
       return AppResponse.success(res, result, 'Lấy dữ liệu phân tích doanh thu thành công', 200);
     } catch (error) {
       next(error);
@@ -60,18 +83,41 @@ export class RevenueController {
    */
   static async getTransactions(req: Request, res: Response, next: NextFunction) {
     try {
-      const filters = req.query as any;
-      const result = await RevenueService.getTransactions({
-        from: filters.from,
-        to: filters.to,
-        facility_id: filters.facility_id ? Number(filters.facility_id) : undefined,
-        source: filters.source || 'all',
-        provider: filters.provider || 'all',
-        page: filters.page ? Number(filters.page) : 1,
-        limit: filters.limit ? Number(filters.limit) : 20,
-        sortBy: filters.sortBy || 'paidAt',
-        sortOrder: filters.sortOrder || 'desc'
-      });
+      const query = req.query;
+      const from = typeof query.from === 'string' ? query.from : undefined;
+      const to = typeof query.to === 'string' ? query.to : undefined;
+      const facility_id = typeof query.facility_id === 'string' ? Number(query.facility_id) : undefined;
+      const source = typeof query.source === 'string' ? (query.source as 'booking' | 'order' | 'all') : undefined;
+      const provider = typeof query.provider === 'string' ? (query.provider as 'cash' | 'vnpay' | 'all') : undefined;
+      const page = typeof query.page === 'string' ? Number(query.page) : undefined;
+      const limit = typeof query.limit === 'string' ? Number(query.limit) : undefined;
+      const sortBy = typeof query.sortBy === 'string' ? (query.sortBy as 'paidAt' | 'amount') : undefined;
+      const sortOrder = typeof query.sortOrder === 'string' ? (query.sortOrder as 'asc' | 'desc') : undefined;
+
+      const serviceParams: {
+        from?: string;
+        to?: string;
+        facility_id?: number;
+        source: 'booking' | 'order' | 'all';
+        provider: 'cash' | 'vnpay' | 'all';
+        page: number;
+        limit: number;
+        sortBy: 'paidAt' | 'amount';
+        sortOrder: 'asc' | 'desc';
+      } = {
+        source: source ?? 'all',
+        provider: provider ?? 'all',
+        page: page ?? 1,
+        limit: limit ?? 20,
+        sortBy: sortBy ?? 'paidAt',
+        sortOrder: sortOrder ?? 'desc',
+      };
+
+      if (from !== undefined) serviceParams.from = from;
+      if (to !== undefined) serviceParams.to = to;
+      if (facility_id !== undefined && !isNaN(facility_id)) serviceParams.facility_id = facility_id;
+
+      const result = await RevenueService.getTransactions(serviceParams);
       return AppResponse.success(res, result, 'Lấy danh sách giao dịch doanh thu thành công', 200);
     } catch (error) {
       next(error);

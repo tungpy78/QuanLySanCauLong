@@ -1,0 +1,1 @@
+{"version":3,"file":"student-pricing.strategy.d.ts","sourceRoot":"","sources":["student-pricing.strategy.ts"],"names":[],"mappings":"AACA,OAAO,KAAK,EAAE,cAAc,EAAE,MAAM,uBAAuB,CAAC;AAG5D,qBAAa,sBAAuB,YAAW,cAAc;IACzD,OAAO,CAAC,gBAAgB,CAAiC;IACzD,OAAO,CAAC,eAAe,CAAS;gBAEpB,eAAe,EAAE,MAAM;IAInC,SAAS,CAAC,OAAO,EAAE,GAAG,EAAE,EAAE,aAAa,EAAE,IAAI,EAAE,WAAW,EAAE,IAAI;;;;CAOnE"}

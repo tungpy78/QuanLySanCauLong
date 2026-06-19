@@ -25,6 +25,7 @@ const runSeeder = async () => {
                     phone: '0999999999',
                     role: 'admin',
                     is_active: true,
+                    membership_type: 'standard',
                 },
                 {
                     full_name: 'Khách Hàng VIP',
@@ -33,6 +34,7 @@ const runSeeder = async () => {
                     phone: '0988888888',
                     role: 'customer',
                     is_active: true,
+                    membership_type: 'vip',
                 },
                 {
                     full_name: 'Nhân viên bán hàng',
@@ -41,6 +43,7 @@ const runSeeder = async () => {
                     phone: '0977777777',
                     role: 'staff',
                     is_active: true,
+                    membership_type: 'standard',
                 }
             ]);
             console.log('✅ Đã tạo tài khoản Admin, Staff và Customer. Pass chung: 123456');
@@ -56,7 +59,7 @@ const runSeeder = async () => {
 
         if (!facility) {
             // Tạo Cơ sở
-            facility = await (models.Facility as any).create({
+            facility = await models.Facility.create({
                 name: facilityName,
                 address: '123 Lê Lợi, Phường Bến Nghé, Quận 1, TP.HCM',
                 is_active: true
@@ -94,24 +97,24 @@ const runSeeder = async () => {
         }
 
         // ==========================================
-        // 4. SẢN PHẨM & BIẾN THỂ & TỒN KHO (TỪ BẠN EM)
+        // 4. SẢN PHẨM & BIẾN THỂ & TỒN KHO
         // ==========================================
         const prodCount = await models.Product.count();
         if (prodCount === 0) {
-            const p1 = await (models.Product as any).create({
+            const p1 = await models.Product.create({
                 name: 'Vợt Cầu Lông Yonex Astrox 99', slug: 'vot-cau-long-yonex-astrox-99', category: 'racket', is_active: true
             });
-            const p2 = await (models.Product as any).create({
+            const p2 = await models.Product.create({
                 name: 'Ống Cầu Lông Yonex Aerosensa 20', slug: 'ong-cau-long-yonex-as20', category: 'shuttlecock', is_active: true
             });
 
             // Tạo Variant
-            const p1v1 = await (models.ProductVariant as any).create({ product_id: p1.id, sku: 'YON-AX99-3U', price_cents: 3500000, is_active: true });
-            const p1v2 = await (models.ProductVariant as any).create({ product_id: p1.id, sku: 'YON-AX99-4U', price_cents: 3400000, is_active: true });
-            const p2v1 = await (models.ProductVariant as any).create({ product_id: p2.id, sku: 'YON-AS20', price_cents: 550000, is_active: true });
+            const p1v1 = await models.ProductVariant.create({ product_id: p1.id, sku: 'YON-AX99-3U', price_cents: 3500000, is_active: true });
+            const p1v2 = await models.ProductVariant.create({ product_id: p1.id, sku: 'YON-AX99-4U', price_cents: 3400000, is_active: true });
+            const p2v1 = await models.ProductVariant.create({ product_id: p2.id, sku: 'YON-AS20', price_cents: 550000, is_active: true });
 
             // Cập nhật tồn kho (Thêm dấu ! vào facility!.id)
-            await (models.InventoryLevel as any).bulkCreate([
+            await models.InventoryLevel.bulkCreate([
                 { variant_id: p1v1.id, facility_id: facility!.id, quantity_on_hand: 10 },
                 { variant_id: p1v2.id, facility_id: facility!.id, quantity_on_hand: 5 },
                 { variant_id: p2v1.id, facility_id: facility!.id, quantity_on_hand: 50 },
@@ -120,16 +123,10 @@ const runSeeder = async () => {
         }
 
         // ==========================================
-        // 5. MÃ KHUYẾN MÃI (PROMO CODES - TỪ BẠN EM)
+        // 5. MÃ KHUYẾN MÃI (PROMO CODES)
         // ==========================================
-        const promoCount = await models.PromoCode.count();
-        if (promoCount === 0) {
-            await (models.PromoCode as any).bulkCreate([
-                { code: 'GIAM10', type: 'percent', value: 10, min_order_cents: 100000, max_uses: 100, is_active: true }, // Đổi active thành is_active
-                { code: 'SALE50K', type: 'fixed', value: 50000, min_order_cents: 200000, max_uses: null, is_active: true },
-            ]);
-            console.log('✅ Đã tạo Mã khuyến mãi Demo.');
-        }
+        // models.PromoCode không còn tồn tại trong models index hiện tại. 
+        // Bỏ qua block seed PromoCode để đảm bảo compile TypeScript thành công.
 
         console.log('🎉 Seeder chạy hoàn tất thành công!');
         process.exit(0);

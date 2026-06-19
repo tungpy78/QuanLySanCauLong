@@ -1,0 +1,3 @@
+export type PaymentProvider = 'cash' | 'vnpay';
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'cancelled';
+//# sourceMappingURL=payment.types.d.ts.map
