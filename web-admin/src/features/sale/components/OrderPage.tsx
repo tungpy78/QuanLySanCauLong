@@ -86,7 +86,7 @@ const OrderManagementPage: React.FC = () => {
       key: 'action',
       render: (_: unknown, record: Order) => (
         <Space size="middle">
-          <Button type="link" onClick={() => {/* TODO: Mở Modal xem chi tiết getOrderById */ }}>Xem chi tiết</Button>
+
 
           {/* Nút hành động thay đổi linh hoạt theo trạng thái đơn */}
           {record.status === 'pending_payment' && (
