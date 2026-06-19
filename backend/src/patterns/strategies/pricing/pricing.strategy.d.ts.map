@@ -1,1 +1,0 @@
-{"version":3,"file":"pricing.strategy.d.ts","sourceRoot":"","sources":["pricing.strategy.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,cAAc;IAC3B,SAAS,CAAC,OAAO,EAAE,GAAG,EAAE,EAAE,aAAa,EAAE,IAAI,EAAE,WAAW,EAAE,IAAI,GAAG;QAC/D,UAAU,EAAE,MAAM,CAAC;QACnB,sBAAsB,EAAE,MAAM,CAAA;KACjC,CAAC;CACL"}
