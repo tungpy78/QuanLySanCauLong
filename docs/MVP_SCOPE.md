@@ -1,3 +1,18 @@
+# [OUTDATED] Phạm vi MVP & Phân công cụ thể
+
+> ⚠️ **FILE NÀY ĐÃ OUTDATED** — Cập nhật lần cuối theo code thật: 2026-06-19 (T-REV-0)  
+> Thay thế bởi: [07-task-roadmap.md](./07-task-roadmap.md)  
+>  
+> Lý do outdated:
+> - Còn đề cập App Mobile (A1, A2) → **Không có trong scope hiện tại**
+> - Phân công nhóm 4 người → Không còn phù hợp với trạng thái hiện tại
+> - Revenue/Dashboard chưa được đưa vào kế hoạch rõ ràng
+> - Nhiều task đã hoàn thành nhưng chưa được đánh dấu
+>  
+> **Đọc [07-task-roadmap.md](./07-task-roadmap.md) thay thế.**
+
+---
+
 # Phạm vi MVP & Phân công cụ thể
 
 ## 1. Phạm vi MVP

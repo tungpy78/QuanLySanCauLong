@@ -1,3 +1,19 @@
+# [OUTDATED] Cấu trúc thư mục & hướng dẫn mở rộng
+
+> ⚠️ **FILE NÀY ĐÃ OUTDATED** — Cập nhật lần cuối theo code thật: 2026-06-19 (T-REV-0)  
+> Thay thế bởi: [05-frontend-structure.md](./05-frontend-structure.md)  
+>  
+> Các lỗi trong file này:
+> - Mô tả `src/modules/{auth, users, facilities...}` → **Không tồn tại** (thực tế: `controllers/services/repositories/routes/admin/`)
+> - Mô tả `apps/web/`, `apps/mobile/` → **Không tồn tại** (thực tế: `web-admin/`)
+> - Mô tả `packages/shared-types/` → **Không tồn tại**
+> - Mô tả `tests/`, `docker-compose.yml` → **Không tồn tại**
+> - Đề cập App Mobile → **Không có trong scope hiện tại**
+>  
+> **Đọc [05-frontend-structure.md](./05-frontend-structure.md) thay thế.**
+
+---
+
 # Cấu trúc thư mục & hướng dẫn mở rộng
 
 ## 1. Cấu trúc đề xuất (monorepo: Web + App + Backend dùng chung)

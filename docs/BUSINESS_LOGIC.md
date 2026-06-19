@@ -1,110 +1,252 @@
-# 📋 TÀI LIỆU QUY HOẠCH NGHIỆP VỤ & PHÂN CHIA TRÁCH NHIỆM (MVP PHASE)
+# BUSINESS_LOGIC.md — Quy Hoạch Nghiệp Vụ
 
-Tài liệu này định nghĩa ranh giới công việc, quyền sở hữu Database và các luồng nghiệp vụ cốt lõi của dự án Quản lý Sân Thể Thao kết hợp Bán lẻ. 
-**⚠️ QUY TẮC TỐI THƯỢNG:** Không ai được phép dùng `sequelize.sync({ force: true })` trên Database chung. Bảng của ai người nấy quản lý, cấm tự ý thay đổi cấu trúc bảng của người khác!
-
----
-
-## 1. PHÂN CHIA TRÁCH NHIỆM DEV THEO DOMAIN
-
-Hệ thống được chia làm 2 Domain lớn, mỗi Domain do 1 cặp (Web + App) phụ trách.
-
-### 🔴 DOMAIN 1: QUẢN LÝ SÂN & ĐẶT LỊCH (Booking & Facility)
-**W1 (Web Admin Backend/Frontend) & A1 (Mobile App Frontend)** phối hợp thực hiện.
-
-#### Trách nhiệm của W1 (Nắm trùm Backend Đặt sân):
-*   **Sở hữu các bảng (DB):** `facilities`, `courts`, `price_configs` (Cấm W2 đụng vào), `bookings`, `booking_slots`.
-*   **Nhiệm vụ Web Admin:**
-    *   Quản lý danh sách Cơ sở & Sân (Thêm/Sửa/Xóa).
-    *   Quản lý Cấu hình Giá (`price_configs` theo giờ và loại sân).
-    *   Màn hình Lễ tân: Xem lịch đặt, Check-in khách, Tạo lịch đặt mới (Hotline).
-    *   Dashboard Thống kê: Doanh thu tiền sân, Số lượng booking, Tỷ lệ lấp đầy.
-*   **Nhiệm vụ API:** Cung cấp API lấy danh sách sân trống, tính tiền, tạo lịch đặt cho A1 gọi.
-
-#### Trách nhiệm của A1 (Giao diện App Đặt sân):
-*   Làm việc trực tiếp với API của W1.
-*   Thiết kế luồng tìm kiếm sân (chọn cơ sở, ngày, môn thể thao).
-*   Thiết kế giao diện chọn giờ (block 30 phút), hiển thị tiền sân.
-*   Xử lý luồng thanh toán / xác nhận đặt sân.
-*   Màn hình "Lịch đặt của tôi" cho khách hàng.
+> **Cập nhật lần cuối:** 2026-06-19 — Sửa status enum, xóa App Mobile, thêm VNPay flow (T-REV-0)
 
 ---
 
-### 🔵 DOMAIN 2: E-COMMERCE, KHO HÀNG & NHÂN SỰ (Retail & Ops)
-**W2 (Web Admin Backend/Frontend) & A2 (Mobile App Frontend)** phối hợp thực hiện.
+## 1. Phân Chia Domain
 
-#### Trách nhiệm của W2 (Nắm trùm Backend Bán lẻ & Hệ thống):
-*   **Sở hữu các bảng (DB):** `users` (Khách & Staff), `products`, `categories`, `inventory_levels` (Tồn kho), `orders`, `order_items`.
-*   **Nhiệm vụ Web Admin:**
-    *   Quản lý Tài khoản (Xác thực Auth, Cấp quyền Admin/Staff).
-    *   Quản lý Sản phẩm (Nước, Cầu...) và Nhập kho.
-    *   Giao diện POS Bán hàng tại quầy cho Lễ tân.
-    *   Màn hình quản lý Đơn hàng Online (Từ App đổ về).
-    *   Dashboard Thống kê: Doanh thu bán lẻ, Hàng tồn kho.
-*   **Nhiệm vụ API:** Cung cấp API cửa hàng, giỏ hàng, đặt đơn, Auth cho A2 gọi.
+Hệ thống được chia thành 2 domain nghiệp vụ chính:
 
-#### Trách nhiệm của A2 (Giao diện App Bán lẻ & User):
-*   Làm việc trực tiếp với API của W2.
-*   Màn hình Đăng nhập / Đăng ký / Hồ sơ cá nhân.
-*   Thiết kế luồng Cửa hàng (Xem sản phẩm, tìm kiếm).
-*   Quản lý Giỏ hàng và luồng Đặt mua Online (In-App Purchases).
-*   Màn hình "Đơn hàng của tôi".
+### 🔴 DOMAIN 1: Quản Lý Sân & Đặt Lịch
 
----
+Backend + Frontend: `backend/` + `web-admin/src/features/booking|court|facility|priceConfig|holiday`
 
-## 2. QUYYỀN HẠN CỦA VAI TRÒ (Role Permissions)
+**Bảng sở hữu:** `facilities`, `courts`, `price_configs`, `bookings`, `booking_slots`
 
-Hệ thống chỉ có 3 Role, áp dụng cho toàn bộ API và UI:
+**Chức năng web-admin:**
+- Quản lý danh sách Cơ sở & Sân (Thêm/Sửa/Xóa mềm/Khôi phục)
+- Quản lý Cấu hình Giá (`price_configs` theo khung giờ và loại sân)
+- Sa bàn lịch đặt sân theo ngày (schedule view)
+- Tạo lịch đặt qua hotline
+- Xem và cập nhật trạng thái booking
+- Cấu hình ngày lễ (Holiday) với phụ thu %
+- Tạo link thanh toán VNPay
+- *(Sắp làm)* Trang doanh thu tiền sân
 
-| Nhóm Tính Năng | Thao tác | `admin` (Web) | `staff` (Web) | `customer` (App) |
-| :--- | :--- | :---: | :---: | :---: |
-| **Hệ thống** | Tạo/Khóa tài khoản Staff | ✅ | ❌ | ❌ |
-| **Sân & Giá (W1)** | Cấu hình Sân & Bảng Giá | ✅ | ❌ | ❌ |
-| | Tìm kiếm sân trống | ✅ | ✅ | ✅ |
-| **Booking (W1)** | Đặt sân (Hotline / App) | ✅ | ✅ | ✅ |
-| | Check-in / Hủy lịch | ✅ | ✅ | ❌ (Chỉ xem) |
-| **Kho & POS (W2)**| Quản lý SP / Nhập kho | ✅ | ❌ | ❌ |
-| | Bán POS / Xử lý đơn Online | ✅ | ✅ | ❌ |
-| **Cửa hàng (A2)** | Xem hàng / Đặt mua | ❌ | ❌ | ✅ |
-| **Báo cáo** | Xem tất cả Doanh thu | ✅ | ❌ | ❌ |
-| | Xem doanh thu ca trực | ✅ | ✅ | ❌ |
+### 🔵 DOMAIN 2: Bán Hàng, Kho & Hệ Thống
 
----
+Backend + Frontend: `backend/` + `web-admin/src/features/product|sale|staff|systemConfig`
 
-## 3. LUỒNG NGHIỆP VỤ CỐT LÕI (Core Business Flows)
+**Bảng sở hữu:** `users`, `products`, `product_variants`, `inventory_levels`, `inventory_movements`, `orders`, `order_items`, `payments`
 
-### 3.1 Luồng Đặt Sân (A1 + W1)
-1. **[A1] Khách hàng:** Chọn Môn -> Chọn Cơ sở -> Chọn Ngày. 
-2. **[A1] Khách hàng:** Gọi API của W1 để lấy danh sách sân trống và giá tiền.
-3. **[A1] Khách hàng:** Chọn giờ, bấm Đặt Sân.
-4. **[W1] Backend:** Ràng buộc luật chống lủng giờ (Smart Gap) -> Tạo Booking trạng thái `PENDING`.
-5. **[W1] Lễ tân (Web):** Khách đến sân, Lễ tân tìm Booking, bấm `CHECK-IN` -> Sân chuyển trạng thái đang dùng.
+**Chức năng web-admin:**
+- Quản lý sản phẩm (CRUD + variants + toggle delete)
+- Quản lý kho: điều chỉnh tồn kho, chuyển kho, log nhập/xuất
+- Giao diện POS bán hàng tại quầy
+- Quản lý đơn hàng (xác nhận, hoàn tất)
+- Quản lý tài khoản nhân viên
+- Cấu hình tham số hệ thống
+- Thanh toán tiền mặt tại quầy
+- *(Sắp làm)* Trang doanh thu bán hàng
 
-### 3.2 Luồng Bán hàng Tại quầy - POS (W2)
-1. **[W2] Lễ tân (Web):** Mở tab POS, chọn 2 chai nước, 1 ống cầu.
-2. **[W2] Backend:** Kiểm tra tồn kho trong `inventory_levels`. Nếu đủ, cho phép thanh toán.
-3. **[W2] Lễ tân (Web):** Thu tiền mặt, bấm Hoàn tất.
-4. **[W2] Backend:** Trừ tồn kho, lưu Log đơn hàng trạng thái `COMPLETED`.
-
-### 3.3 Luồng Bán hàng Online (A2 + W2)
-1. **[A2] Khách hàng:** Lên App mua 1 bộ quần áo, thanh toán online.
-2. **[W2] Backend:** Tạo Order trạng thái `PENDING`, tạm trừ tồn kho.
-3. **[W2] Lễ tân (Web):** Nhận thông báo có đơn mới, chuẩn bị đồ sẵn ở quầy, chuyển trạng thái `PROCESSING`.
-4. **[W2] Lễ tân (Web):** Khách tới lấy đồ, Lễ tân bấm `COMPLETED`.
+> ⚠️ **Không có App Mobile trong scope hiện tại.** Phần A1, A2 trong docs cũ là outdated.
 
 ---
 
-## 4. QUY CHUẨN TRẠNG THÁI (Status Enums)
+## 2. Quyền Hạn Theo Role
 
-Bắt buộc sử dụng các chuỗi (String) chuẩn sau trong Database và API:
+| Nhóm Tính Năng | Thao tác | `admin` | `staff` |
+|---------------|----------|---------|---------|
+| **Tài khoản** | Tạo/Khóa tài khoản Staff | ✅ | ❌ |
+| **Sân & Giá** | CRUD Cơ sở, Sân, Bảng giá | ✅ | ❌ |
+| | Xem sân, tìm slot | ✅ | ✅ |
+| **Booking** | Tạo booking hotline | ✅ | ✅ |
+| | Cập nhật trạng thái, VNPay | ✅ | ✅ |
+| | Xem danh sách booking | ✅ | ✅ |
+| **Kho & POS** | Quản lý sản phẩm, nhập kho | ✅ | ❌ |
+| | Bán POS, xử lý đơn | ✅ | ✅ |
+| | Xem tồn kho | ✅ | ✅ |
+| **Holiday** | Cấu hình ngày lễ | ✅ | ❌ |
+| **SystemConfig** | Cấu hình tham số | ✅ | ❌ |
+| **Doanh thu** | Xem Revenue Page | ✅ | **❌** |
 
-*   **Booking Status (W1):**
-    *   `pending`: Đang chờ thanh toán/xác nhận.
-    *   `confirmed`: Đã chốt lịch.
-    *   `checked_in`: Khách đang chơi trên sân.
-    *   `cancelled`: Đã hủy.
-*   **Order Status (W2):**
-    *   `pending`: Vừa đặt xong.
-    *   `processing`: Đang chuẩn bị hàng.
-    *   `completed`: Đã giao hàng & thu tiền.
-    *   `cancelled`: Hủy đơn (Trả lại tồn kho).
+---
+
+## 3. Luồng Nghiệp Vụ Cốt Lõi
+
+### 3.1 Luồng Đặt Sân Qua Hotline
+
+```
+[Staff/Admin Web] → POST /api/v1/admin/bookings/hotline
+  {
+    facility_id, date, slots: [{court_id, start_at, end_at}],
+    customer_phone (optional), payment_method: "cash" | "vnpay"
+  }
+  
+  Backend:
+  1. Tìm/tạo user theo phone (nếu có)
+  2. Kiểm tra overlap trong booking_slots
+  3. Tính giá từ price_configs + Holiday surcharge
+  4. Transaction: INSERT bookings (status: pending) + booking_slots
+  5. INSERT payments (status: pending)
+  6. Return booking detail
+
+[Staff/Admin] → PUT /api/v1/admin/bookings/:id/status
+  { status: "confirmed" | "cancelled" | "completed" | "no_show" }
+```
+
+### 3.2 Luồng Thanh Toán VNPay
+
+```
+[Staff/Admin Web] → GET /api/v1/admin/bookings/:id/vnpay-url
+  ← { paymentUrl: "https://sandbox.vnpayment.vn/..." }
+
+[Staff] → Gửi URL cho khách thanh toán
+
+[Khách] → Thanh toán trên VNPay
+
+[VNPay] → GET /api/v1/admin/payments/vnpay-ipn?vnp_*=...
+  Backend:
+  1. Verify HMAC signature
+  2. UPDATE payments.status = 'paid', paid_at = now()
+  3. UPDATE bookings.payment_status = 'paid'
+  4. Return { RspCode: '00', Message: 'Confirm Success' }
+
+[Khách] → GET /api/v1/admin/payments/vnpay-return
+  ← HTML page kết quả thanh toán
+```
+
+### 3.3 Luồng Thanh Toán Tiền Mặt (Booking)
+
+```
+[Staff] → Thu tiền mặt từ khách
+[Staff Web] → PUT /api/v1/admin/bookings/:id/status { payment_status: "paid" }
+  Backend: UPDATE bookings.payment_status = 'paid'
+```
+
+### 3.4 Luồng Bán Hàng POS
+
+```
+[Staff Web] → POST /api/v1/admin/orders/pos
+  {
+    facility_id,
+    payment_method: "cash" | "vnpay",
+    items: [{ variant_id, quantity }]
+  }
+  
+  Backend:
+  1. Kiểm tra inventory_levels cho từng variant tại facility
+  2. Transaction:
+     a. INSERT orders (status: pending_payment)
+     b. INSERT order_items
+     c. UPDATE inventory_levels (trừ kho)
+     d. INSERT inventory_movements (reason: 'sale')
+     e. INSERT payments (status: pending)
+  3. Return order detail
+
+[Staff] → Thu tiền mặt → PATCH /api/v1/admin/payments/:id/pay-cash
+  Backend: UPDATE payments.status = 'paid'
+  → PATCH /api/v1/admin/orders/:id/confirm → complete
+```
+
+---
+
+## 4. Quy Chuẩn Trạng Thái (Enums — theo code thật)
+
+### Booking Status
+
+| Value | Mô tả |
+|-------|-------|
+| `pending` | Vừa tạo, chờ xác nhận |
+| `confirmed` | Đã xác nhận lịch |
+| `cancelled` | Đã hủy |
+| `completed` | Đã hoàn thành |
+| `no_show` | Khách không đến |
+
+> ⚠️ **Không có** status `checked_in` — docs cũ `BUSINESS_LOGIC.md` ghi sai.
+
+### Booking Payment Status
+
+| Value | Mô tả |
+|-------|-------|
+| `unpaid` | Chưa thanh toán |
+| `partial` | Thanh toán một phần |
+| `paid` | Đã thanh toán đủ |
+| `refunded` | Đã hoàn tiền |
+
+### Order Status
+
+| Value | Mô tả |
+|-------|-------|
+| `pending_payment` | Chờ thanh toán |
+| `pending_pickup` | Đã thanh toán, chờ nhận hàng |
+| `completed` | Đã giao hàng và thanh toán |
+| `cancelled` | Đã hủy |
+| `refunded` | Đã hoàn tiền |
+| `expired` | Hết thời hạn |
+
+> ⚠️ **Không có** status `processing` — docs cũ `BUSINESS_LOGIC.md` ghi sai.
+
+### Payment Provider
+
+| Value | Mô tả |
+|-------|-------|
+| `cash` | Tiền mặt |
+| `vnpay` | VNPay (sandbox) |
+
+> ⚠️ **Không có** `manual_transfer`, `momo`, `sandbox` — docs cũ ghi sai.
+
+### Payment Status
+
+| Value | Mô tả |
+|-------|-------|
+| `pending` | Chờ thanh toán |
+| `paid` | Đã thanh toán |
+| `failed` | Thất bại |
+| `refunded` | Đã hoàn tiền |
+
+---
+
+## 5. Quy Tắc Nghiệp Vụ Quan Trọng
+
+### 5.1 Tính Giá Booking
+
+```
+Giá sân = SUM(booking_slots.price_cents)
+price_cents của mỗi slot = price_per_hour × (duration_hours)
+  → Lấy từ price_configs theo: facility_id + court_type + khung giờ
+  → Nếu ngày lễ: nhân thêm (1 + surcharge_percent / 100)
+```
+
+### 5.2 Chống Double Booking
+
+- Trước khi INSERT booking_slots: kiểm tra overlap với các slots đã có
+- Nếu overlap → throw error
+- Bọc trong Sequelize transaction để tránh race condition
+
+### 5.3 Quản Lý Tồn Kho
+
+- Mỗi sản phẩm tại mỗi cơ sở có 1 dòng trong `inventory_levels` (UNIQUE variant_id + facility_id)
+- Khi bán hàng: trừ `quantity_on_hand` và ghi vào `inventory_movements`
+- Khi điều chỉnh kho: ghi `inventory_movements` với reason phù hợp
+
+### 5.4 Soft Delete Cascade
+
+Khi xóa mềm `Facility`:
+- Tự động xóa mềm tất cả `Court` thuộc facility
+- Tự động xóa mềm tất cả `PriceConfig` thuộc facility
+- Tự động xóa mềm tất cả `InventoryLevel` thuộc facility
+
+Khi khôi phục `Facility`: Cascade ngược lại.
+
+### 5.5 loyalty_points & membership_type
+
+- Các field `loyalty_points` và `membership_type` **tồn tại** trong `users` model
+- **Chưa có business logic nào** sử dụng chúng trong flow hiện tại
+- Không áp dụng ưu đãi, không cộng điểm, không phân biệt tier
+- Đây là field để dành cho tính năng tương lai
+
+---
+
+## 6. Doanh Thu — Nghiệp Vụ Dự Kiến
+
+> ⚠️ Phần này mô tả **kế hoạch** — chưa có API thật.
+
+Doanh thu được tính từ bảng `payments` WHERE `status = 'paid'`:
+- **Doanh thu tiền sân:** `booking_id IS NOT NULL`
+- **Doanh thu bán hàng:** `order_id IS NOT NULL`
+- **Đơn vị:** integer VNĐ (1 unit = 1 VNĐ)
+- **Phân quyền:** Chỉ `admin` xem được
+
+Chi tiết xem [08-revenue-module-plan.md](./08-revenue-module-plan.md).

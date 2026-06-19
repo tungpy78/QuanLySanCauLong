@@ -1,3 +1,19 @@
+// ============================================================
+// [OUTDATED] DATABASE_SCHEMA.dbml
+// Cập nhật theo code thật: 2026-06-19 (T-REV-0)
+// Thay thế bởi: 04-database-schema.dbml
+//
+// Lỗi trong file này:
+// - Có bảng cart_items, notifications → không tồn tại trong code hiện tại
+// - Bảng price_rules → thực tế là price_configs
+// - orders.payment_method → không có trong Order model
+// - court_types: courts dùng court_type enum trực tiếp, không FK
+// - Thiếu: holidays, system_configs, audit_logs
+// - Thiếu cột: booking.payment_method, order.pickup_type, user.membership_type
+//
+// ĐỌC 04-database-schema.dbml THAY THẾ
+// ============================================================
+
 // Sử dụng tại dbdiagram.io
 
 Table users {

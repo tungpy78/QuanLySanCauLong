@@ -1,3 +1,18 @@
+# [OUTDATED] Kiến trúc, API và luồng dữ liệu
+
+> ⚠️ **FILE NÀY ĐÃ OUTDATED** — Cập nhật lần cuối theo code thật: 2026-06-19 (T-REV-0)  
+> Thay thế bởi: [02-architecture.md](./02-architecture.md)  
+>  
+> Các lỗi quan trọng trong file này:
+> - Error format ghi `{ "error": { "code": "...", "message": "..." } }` → **Sai** (thực tế: `{ success, statusCode, message, data }`)
+> - Nhắc đến "Express/Fastify" → **Sai** (chỉ dùng Express v5)
+> - Nhắc đến App Mobile → **Không có trong scope hiện tại**
+> - Route `/reports/revenue` → **Chưa tồn tại**
+>  
+> **Đọc [02-architecture.md](./02-architecture.md) thay thế.**
+
+---
+
 # Kiến trúc, API và luồng dữ liệu
 
 ## 1. Kiến trúc chi tiết

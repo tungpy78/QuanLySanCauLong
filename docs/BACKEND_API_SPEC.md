@@ -1,3 +1,20 @@
+# [OUTDATED] Tài liệu Đặc tả Backend API
+
+> ⚠️ **FILE NÀY ĐÃ OUTDATED** — Cập nhật lần cuối theo code thật: 2026-06-19 (T-REV-0)  
+> Thay thế bởi: [03-backend-api.md](./03-backend-api.md)  
+>  
+> Các lỗi nghiêm trọng trong file này:
+> - Viết cho **App Mobile** (khách hàng), không phải web-admin
+> - Base URL: `https://api.caulong.example.com/v1` → **Sai** (thực tế: `http://localhost:5000/api/v1`)
+> - Thiếu prefix `/admin/` trên mọi route
+> - Response format sai hoàn toàn
+> - Thiếu toàn bộ API thật: inventory, system-config, holiday, staff
+> - `POST /orders` payload có `payment_method: "manual_transfer"` → **Không tồn tại** (chỉ có `cash | vnpay`)
+>  
+> **Đọc [03-backend-api.md](./03-backend-api.md) thay thế.**
+
+---
+
 # Tài liệu Đặc tả Backend API cho hệ thống đặt sân Cầu Lông
 
 Tài liệu này mô tả các điểm cuối (endpoints) cần thiết để Backend có thể triển khai, nhằm thay thế dữ liệu giả lập (mock data) hiện tại trong ứng dụng Mobile.
