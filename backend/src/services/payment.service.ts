@@ -221,7 +221,8 @@ export class PaymentService {
                 // --- THÀNH CÔNG ---
                 await booking.update({
                     payment_status: 'paid',
-                    status: 'confirmed' 
+                    status: 'confirmed',
+                    payment_method: 'vnpay'
                 }, { transaction: t });
 
                 await (models.Payment as any).create({

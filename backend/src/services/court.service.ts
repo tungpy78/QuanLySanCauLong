@@ -3,6 +3,7 @@ import models from "../models/index.js";
 import ApiError from "../utils/ErrorClass.js";
 import type { CreateCourtInput, UpdateCourtInput } from "../validations/court.validation.js";
 import { courtRepository } from "../repositories/court.repository.js";
+import { facilityRepository } from "../repositories/facility.repository.js";
 
 export class CourtService {
     static async getAllCourts() {
@@ -32,7 +33,7 @@ export class CourtService {
     }
 
     static async createCourt(data: CreateCourtInput) {
-        const facility = await courtRepository.findOne({
+        const facility = await facilityRepository.findOne({
             where: { id: data.facility_id, is_active: true}
         });
         if(!facility) throw new ApiError("Cơ sở này không tồn tại hoặc đã ngừng hoạt động", 404);
@@ -53,7 +54,7 @@ export class CourtService {
         const court = await this.getCourtByIdByAdmin(id);
 
         if(data.facility_id && data.facility_id !== court.facility_id) {
-            const newFacility = await courtRepository.findOne({
+            const newFacility = await facilityRepository.findOne({
                 where: {id: data.facility_id, is_active: true}
             })
             if(!newFacility) throw new ApiError("Cơ sở mới không tồn tại", 404);

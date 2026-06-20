@@ -1,6 +1,6 @@
 # 07 — Task Roadmap
 
-> **Cập nhật lần cuối:** 2026-06-19 — Đồng bộ theo code thật (T-REV-0)  
+> **Cập nhật lần cuối:** 2026-06-19 — Cập nhật backend completed theo T-REV-3  
 > ⚠️ File `MVP_SCOPE.md` cũ đã **outdated** (còn đề cập App Mobile) — roadmap thực tế theo file này.
 
 ## 1. Trạng Thái Hiện Tại
@@ -19,7 +19,7 @@
 | Staff/User | ✅ Hoàn thành | ✅ Hoàn thành | CRUD nhân viên |
 | Holiday | ✅ Hoàn thành | ✅ Hoàn thành | Ngày lễ + phụ thu |
 | SystemConfig | ✅ Hoàn thành | ✅ Hoàn thành | Cấu hình tham số |
-| **Revenue** | ❌ Chưa có | ❌ Chưa có | **Module tiếp theo** |
+| **Revenue** | ✅ Hoàn thành | ❌ Chưa có | **Backend hoàn tất & đã test thủ công, chờ Frontend** |
 | Dashboard | ⚠️ N/A | ⚠️ Placeholder | DashboardPage là div trống |
 
 ---
@@ -28,7 +28,7 @@
 
 ### T-REV-0: Đồng Bộ Docs Theo Code Thật
 
-**Status: ✅ ĐANG THỰC HIỆN (2026-06-19)**
+**Status: ✅ DONE (2026-06-19)**
 
 | Task | Status | File |
 |------|--------|------|
@@ -48,7 +48,7 @@
 
 ### T-REV-1: Thiết Kế Revenue API
 
-**Status: 🔜 Chờ duyệt**
+**Status: ✅ DONE (2026-06-19)**
 
 Mục tiêu:
 - Xác định query SQL/Sequelize cần thiết
@@ -62,33 +62,33 @@ Deliverable: Plan được duyệt, `08-revenue-module-plan.md` update chi tiế
 
 ### T-REV-2: Code Revenue Backend API
 
-**Status: 🔜 Chờ sau T-REV-1**
+**Status: ✅ DONE (2026-06-19)**
 
 Tasks:
-- [ ] Tạo `backend/src/repositories/revenue.repository.ts`
-- [ ] Tạo `backend/src/services/revenue.service.ts`
-- [ ] Tạo `backend/src/controllers/admin/revenue.controller.ts`
-- [ ] Tạo `backend/src/routes/admin/revenue.route.ts`
-- [ ] Mount vào `backend/src/routes/index.ts`
-- [ ] Cập nhật `03-backend-api.md` với Revenue endpoints
+- [x] Tạo `backend/src/repositories/revenue.repository.ts`
+- [x] Tạo `backend/src/services/revenue.service.ts`
+- [x] Tạo `backend/src/controllers/admin/revenue.controller.ts`
+- [x] Tạo `backend/src/routes/admin/revenue.route.ts`
+- [x] Mount vào `backend/src/routes/index.ts`
+- [x] Cập nhật `03-backend-api.md` với Revenue endpoints
 
 ---
 
 ### T-REV-3: Test Revenue Backend API
 
-**Status: 🔜 Chờ sau T-REV-2**
+**Status: ✅ DONE (2026-06-19 — Manual tested)**
 
 Tasks:
-- [ ] Test thủ công với Postman / Thunder Client / curl
-- [ ] Kiểm tra dữ liệu trả về đúng với data thật trong DB
-- [ ] Kiểm tra phân quyền (staff không xem được)
-- [ ] Kiểm tra edge case: không có dữ liệu, date range rỗng
+- [x] Test thủ công với Postman / Thunder Client / curl
+- [x] Kiểm tra dữ liệu trả về đúng với data thật trong DB
+- [x] Kiểm tra phân quyền (staff không xem được)
+- [x] Kiểm tra edge case: không có dữ liệu, date range rỗng
 
 ---
 
 ### T-REV-4: Code Revenue Page (web-admin)
 
-**Status: 🔜 Chờ sau T-REV-3**
+**Status: 🔜 NEXT (Chờ code Frontend)**
 
 Tasks:
 - [ ] Tạo `web-admin/src/features/revenue/` structure

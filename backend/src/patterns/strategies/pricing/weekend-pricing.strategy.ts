@@ -5,8 +5,8 @@ export class WeekendPricingStrategy implements IPriceStrategy {
     private standardStrategy = new StandardPricingStrategy();
     private surchargePercent: number;
 
-    constructor(discountPercent: number) {
-        this.surchargePercent = discountPercent;
+    constructor(surchargePercent: number) {
+        this.surchargePercent = surchargePercent;
     }
 
     calculate(configs: any[], startDateTime: Date, endDateTime: Date) {

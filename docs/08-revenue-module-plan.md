@@ -1,7 +1,7 @@
 # 08 — Revenue Module Plan
 
-> **Cập nhật lần cuối:** 2026-06-19 — Tạo mới theo T-REV-0  
-> **Trạng thái module:** ❌ Chưa tồn tại — Đây là kế hoạch, chưa được code.
+> **Cập nhật lần cuối:** 2026-06-19 — Cập nhật backend completed theo T-REV-3  
+> **Trạng thái module:** ⚠️ Đang phát triển (Backend hoàn thành & đã test thủ công, chờ làm Frontend)
 
 ## 1. Tổng Quan
 
@@ -18,12 +18,18 @@
 
 | Hạng mục | Trạng thái |
 |---------|-----------|
-| Backend API | ❌ Chưa tồn tại |
-| Frontend Feature | ❌ Chưa tồn tại |
-| Route `/api/v1/admin/revenue/*` | ❌ Chưa có |
+| Backend API | ✅ Hoàn thành (Đã test thủ công) |
+| Frontend Feature | ❌ Chưa bắt đầu |
+| Route `/api/v1/admin/revenue/*` | ✅ Đã triển khai |
 | Route `/revenue` trên web-admin | ❌ Chưa có |
 | Menu item "Doanh thu" | ❌ Chưa có |
-| Chart library | ❌ Chưa cài — TBD ở T-REV-1 |
+| Chart library | ❌ Chưa cài |
+
+### Tiến độ các Task:
+- **T-REV-1:** completed
+- **T-REV-2:** completed
+- **T-REV-3:** backend manual API test completed
+- **T-REV-4:** pending frontend Revenue Page
 
 ---
 
@@ -53,9 +59,9 @@ WHERE p.status = 'paid'
 
 ---
 
-## 4. API Dự Kiến (Chưa Code — T-REV-2)
+## 4. Backend APIs Đã Triển Khai (T-REV-2 & T-REV-3: completed)
 
-> ⚠️ Tất cả API sau đây **chưa tồn tại**. Sẽ được implement sau khi T-REV-1 được duyệt.
+> ✅ Tất cả API sau đây đã được triển khai thành công và kiểm thử thủ công đạt kết quả tốt.
 
 ### Base: `/api/v1/admin/revenue`
 

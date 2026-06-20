@@ -1,6 +1,6 @@
 # BUSINESS_LOGIC.md — Quy Hoạch Nghiệp Vụ
 
-> **Cập nhật lần cuối:** 2026-06-19 — Sửa status enum, xóa App Mobile, thêm VNPay flow (T-REV-0)
+> **Cập nhật lần cuối:** 2026-06-19 — Cập nhật backend completed cho Revenue Module (T-REV-3)
 
 ---
 
@@ -239,14 +239,14 @@ Khi khôi phục `Facility`: Cascade ngược lại.
 
 ---
 
-## 6. Doanh Thu — Nghiệp Vụ Dự Kiến
+## 6. Doanh Thu — Nghiệp Vụ
 
-> ⚠️ Phần này mô tả **kế hoạch** — chưa có API thật.
+> ✅ Phần Backend API đã được triển khai thành công và kiểm thử thủ công đạt kết quả tốt.
 
 Doanh thu được tính từ bảng `payments` WHERE `status = 'paid'`:
 - **Doanh thu tiền sân:** `booking_id IS NOT NULL`
 - **Doanh thu bán hàng:** `order_id IS NOT NULL`
-- **Đơn vị:** integer VNĐ (1 unit = 1 VNĐ)
-- **Phân quyền:** Chỉ `admin` xem được
+- **Đơn vị:** integer VNĐ (1 unit = 1 VNĐ), không chia 100.
+- **Phân quyền:** Chỉ `admin` xem được (Staff bị chặn 403, Không token trả 401).
 
-Chi tiết xem [08-revenue-module-plan.md](./08-revenue-module-plan.md).
+Chi tiết xem [08-revenue-module-plan.md](./08-revenue-module-plan.md) và [03-backend-api.md](./03-backend-api.md).

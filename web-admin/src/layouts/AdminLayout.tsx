@@ -37,7 +37,7 @@ const AdminLayout: React.FC = () => {
   const isAdmin = user?.role === 'admin';
 
   const menuItems = [
-    { key: '/', icon: <DashboardOutlined />, label: 'Tổng quan' },
+    ...(isAdmin ? [{ key: '/', icon: <DashboardOutlined />, label: 'Tổng quan' }] : []),
     
     // NHÓM QUẢN LÝ ĐẶT SÂN
     { 
