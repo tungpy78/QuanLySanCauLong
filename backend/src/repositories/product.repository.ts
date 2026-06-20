@@ -5,7 +5,6 @@ import { BaseRepository } from './base.repository.js';
 import { Op } from 'sequelize';
 
 class ProductRepository extends BaseRepository<any> {
-
     constructor() {
         super(models.Product as any);
     }
@@ -20,7 +19,6 @@ class ProductRepository extends BaseRepository<any> {
                     model: models.ProductVariant,
                     as: 'variants',
                     required: !!facilityId,
-
                     include: [
                         {
                             model: models.InventoryLevel,
@@ -56,7 +54,6 @@ class ProductRepository extends BaseRepository<any> {
                 {
                     model: models.ProductVariant,
                     as: 'variants',
-
                     include: [
                         {
                             model: models.InventoryLevel,
@@ -69,7 +66,6 @@ class ProductRepository extends BaseRepository<any> {
     }
 
     async search(filters: SearchProductDto) {
-
         const {
             search,
             category,
@@ -103,55 +99,37 @@ class ProductRepository extends BaseRepository<any> {
         // search product name hoặc slug
         if (search) {
             (productWhere as any)[Op.or] = [
-                {
-                    name: {
-                        [Op.like]: `%${search}%`
-                    }
-                },
-                {
-                    slug: {
-                        [Op.like]: `%${search}%`
-                    }
-                }
+                { name: { [Op.like]: `%${search}%` } },
+                { slug: { [Op.like]: `%${search}%` } }
             ];
         }
 
         // filter giá
         if (min_price || max_price) {
-
             variantWhere.price_cents = {};
 
             if (min_price) {
-                variantWhere.price_cents[Op.gte] =
-                    Number(min_price);
+                variantWhere.price_cents[Op.gte] = Number(min_price);
             }
 
             if (max_price) {
-                variantWhere.price_cents[Op.lte] =
-                    Number(max_price);
+                variantWhere.price_cents[Op.lte] = Number(max_price);
             }
         }
 
         // search SKU
         if (search) {
-            variantWhere.sku = {
-                [Op.like]: `%${search}%`
-            };
+            variantWhere.sku = { [Op.like]: `%${search}%` };
         }
 
         return this.model.findAndCountAll({
-
             where: productWhere,
-
             include: [
                 {
                     model: models.ProductVariant,
                     as: 'variants',
-
                     required: true,
-
                     where: variantWhere,
-
                     include: [
                         {
                             model: models.InventoryLevel,
@@ -161,18 +139,10 @@ class ProductRepository extends BaseRepository<any> {
                     ]
                 }
             ],
-
-            offset:
-                (Number(page) - 1) *
-                Number(limit),
-
+            offset: (Number(page) - 1) * Number(limit),
             limit: Number(limit),
-
             distinct: true,
-
-            order: [
-                ['created_at', 'DESC']
-            ]
+            order: [['created_at', 'DESC']]
         });
     }
 
@@ -201,19 +171,13 @@ class ProductRepository extends BaseRepository<any> {
     async restoreProduct(product: any) {
         await product.restore();
 
-        await product.update({
-            is_active: true
-        });
+        await product.update({ is_active: true });
     }
 
     async softDeleteProduct(product: any) {
-        await product.update({
-            is_active: false
-        });
-
+        await product.update({ is_active: false });
         await product.destroy();
     }
 }
 
-export const productRepository =
-    new ProductRepository();
+export const productRepository = new ProductRepository();

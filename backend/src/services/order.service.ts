@@ -7,11 +7,7 @@ import { orderItemRepository } from '../repositories/order-item.repository.js';
 import { PaymentFactory } from '../patterns/factories/payment.factory.js';
 
 export class OrderService {
-    static async createOrder(
-        userId: number | null,
-        data: any
-    ) {
-
+    static async createOrder(userId: number | null, data: any) {
         const {
             customer_name,
             customer_phone,
@@ -23,14 +19,10 @@ export class OrderService {
         } = data;
 
         if (!items?.length) {
-            throw new ApiError(
-                'Giỏ hàng trống',
-                400
-            );
+            throw new ApiError('Giỏ hàng trống', 400);
         }
 
-        const t =
-            await sequelize.transaction();
+        const t = await sequelize.transaction();
 
         try {
             // Lấy danh sách variant_id từ items để truy vấn DB
@@ -42,140 +34,66 @@ export class OrderService {
                 transaction: t
             });
 
-            const variantMap = new Map<number, any>(
-                variants.map((v: any) => [v.id, v])
-            );
+            const variantMap = new Map<number, any>(variants.map((v: any) => [v.id, v]));
 
             let subtotalCents = 0;
             for (const item of items) {
                 const variantId = item.variant_id || item.product_variant_id;
                 const variant = variantMap.get(variantId);
                 if (!variant) {
-                    throw new ApiError(
-                        `Không tìm thấy biến thể sản phẩm có ID ${variantId}`,
-                        400
-                    );
+                    throw new ApiError(`Không tìm thấy biến thể sản phẩm có ID ${variantId}`, 400);
                 }
                 subtotalCents += variant.price_cents * item.quantity;
             }
 
             const totalCents = subtotalCents;
 
-            let targetFacilityId =
-                facility_id;
+            let targetFacilityId = facility_id;
 
             if (!targetFacilityId) {
-
-                const firstFacility =
-                    await models.Facility.findOne({
-                        attributes: ['id']
-                    });
+                const firstFacility = await models.Facility.findOne({ attributes: ['id'] });
 
                 if (!firstFacility) {
-                    throw new ApiError(
-                        'Hệ thống chưa cấu hình Facility',
-                        500
-                    );
+                    throw new ApiError('Hệ thống chưa cấu hình Facility', 500);
                 }
-
-                targetFacilityId =
-                    firstFacility.id;
+                targetFacilityId = firstFacility.id;
             }
 
-            const order =
-                await orderRepository.createOrder(
-                    {
-                        user_id:
-                            userId,
+            const order = await orderRepository.createOrder({
+                user_id: userId,
+                facility_id: targetFacilityId,
+                status: 'pending_payment',
+                subtotal_cents: subtotalCents,
+                total_cents: totalCents,
+                note: `Khách: ${customer_name || 'N/A'} - ${customer_phone || 'N/A'}. Đ/c: ${shipping_address || 'N/A'}. ${note || ''}`
+            }, t);
 
-                        facility_id:
-                            targetFacilityId,
+            const orderItems = items.map((item: any) => {
+                const variantId = item.variant_id || item.product_variant_id;
+                const variant = variantMap.get(variantId);
+                return {
+                    order_id: order.id,
+                    variant_id: variantId,
+                    quantity: item.quantity,
+                    unit_price_cents: variant.price_cents,
+                    discount_cents: 0
+                };
+            });
 
-                        status:
-                            'pending_payment',
+            await orderItemRepository.bulkCreate(orderItems, t);
 
-                        subtotal_cents:
-                            subtotalCents,
+            await paymentRepository.create({
+                provider: payment_method,
+                amount_cents: totalCents,
+                order_id: order.id,
+                status: 'pending'
+            }, t);
 
-                        total_cents:
-                            totalCents,
-
-                        note:
-                            `Khách: ${customer_name ||
-                            'N/A'
-                            } - ${customer_phone ||
-                            'N/A'
-                            }. Đ/c: ${shipping_address ||
-                            'N/A'
-                            }. ${note || ''
-                            }`
-                    },
-                    t
-                );
-
-            const orderItems =
-                items.map(
-                    (item: any) => {
-                        const variantId = item.variant_id || item.product_variant_id;
-                        const variant = variantMap.get(variantId);
-                        return {
-                            order_id:
-                                order.id,
-
-                            variant_id:
-                                variantId,
-
-                            quantity:
-                                item.quantity,
-
-                            unit_price_cents:
-                                variant.price_cents,
-
-                            discount_cents:
-                                0
-                        };
-                    }
-                );
-
-            await orderItemRepository
-                .bulkCreate(
-                    orderItems,
-                    t
-                );
-
-            await paymentRepository
-                .create(
-                    {
-                        provider:
-                            payment_method,
-
-                        amount_cents:
-                            totalCents,
-
-                        order_id:
-                            order.id,
-
-                        status:
-                            'pending'
-                    },
-                    t
-                );
-
-            let paymentResult =
-                null;
+            let paymentResult = null;
 
             if (payment_method) {
-
-                const strategy =
-                    PaymentFactory.create(
-                        payment_method
-                    );
-
-                paymentResult =
-                    await strategy.process(
-                        order,
-                        t
-                    );
+                const strategy = PaymentFactory.create(payment_method);
+                paymentResult = await strategy.process(order, t);
             }
 
             await t.commit();
@@ -184,11 +102,8 @@ export class OrderService {
                 order,
                 paymentResult
             };
-
         } catch (error) {
-
             await t.rollback();
-
             throw error;
         }
     }
